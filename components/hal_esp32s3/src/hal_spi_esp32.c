@@ -15,6 +15,9 @@
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "esp_err.h"
+/* pdMS_TO_TICKS: 定义在 freertos/projdefs.h（经 FreeRTOS.h 提供）。
+ * IDF 6.1 收紧头文件依赖后不再间接包含，需显式引入（同组件其他 hal_*.c 已包含）。*/
+#include "freertos/FreeRTOS.h"
 
 #include <stdatomic.h>
 

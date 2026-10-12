@@ -16,6 +16,14 @@
 
 idf_component_register(REQUIRES mini_tree driver_ws2812 espressif__cjson log)
 
+# IDF 6.1 的依赖展开阶段以脚本模式 (cmake -P) include 本文件；与 5.5 不同，
+# idf_component_register 已不再提前 return（IDF 6.1 component.cmake:445 无脚本模式分支），
+# 故其后的 add_custom_command / add_library / target_link_libraries 等非脚本化命令
+# 必须在此显式跳过，否则报 "not scriptable" 或找不到 TARGET。
+if(CMAKE_SCRIPT_MODE_FILE OR "${COMPONENT_LIB}" STREQUAL "")
+    return()
+endif()
+
 find_program(CARGO_EXE cargo
     HINTS "$ENV{USERPROFILE}/.cargo/bin" "$ENV{HOME}/.cargo/bin" "$ENV{CARGO_HOME}/bin")
 if(NOT CARGO_EXE)
@@ -39,21 +47,34 @@ add_custom_target(app_rust_cargo ALL DEPENDS "${RUST_LIB}")
 add_library(app_rust_lib STATIC IMPORTED GLOBAL)
 set_target_properties(app_rust_lib PROPERTIES IMPORTED_LOCATION "${RUST_LIB}")
 add_dependencies(app_rust_lib app_rust_cargo)
+
+# 关键: 显式声明 libapp_rust.a 依赖它引用的 C 库。
+# IDF 6.1 在 project.cmake 里按内部 build_components 顺序把组件库逐个挂到 elf 上,
+# 该顺序**不保证**「提供方」排在「引用方」之后：实测 idf::espressif__cjson 排在
+# idf::app_rust 之前，而最终链接行没有链接组。ld 单遍扫描时 cjson 已被跳过，
+# 扫到 libapp_rust.a 再引用 cJSON_Parse 等就报 undefined reference。
+#
+# 把依赖关系告诉 CMake 的链接依赖排序 (cmComputeLinkDepends) 后，CMake 会保证
+# 静态库的依赖排在其**之后**，即 libapp_rust.a 先于 libespressif__cjson.a 被扫描。
+set_property(TARGET app_rust_lib APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+             __idf_espressif__cjson __idf_mini_tree __idf_log __idf_driver_ws2812)
+
 target_link_libraries(${COMPONENT_LIB} INTERFACE app_rust_lib)
 
 # 链接顺序说明（关键，勿删）:
 #
-# IDF 5.5 的最终链接行**没有** --start-group/--end-group，静态库按拓扑序单向扫描。
-# app_rust 依赖 cjson / mini_tree / log，拓扑展开时 libapp_rust.a 必然排在这些库
-# **之后**; 而 ld 扫描 cjson.a 时 Rust 的引用尚未出现，该库成员不会被拉入; 等扫到
-# Rust 库再引用 cJSON_Parse / device_ioctl / esp_log_write 时已无库可提供，
+# IDF 的最终链接行**没有** --start-group/--end-group，静态库被单遍扫描；顺序由
+# project.cmake 按内部 build_components 决定，无法从组件层改变。libapp_rust.a
+# 引用的 C 符号若其提供方库排在其**之前**，ld 扫到 Rust 库时该符号已无库可提供，
 # 报 undefined reference。
+#
+# 因此上面的 INTERFACE_LINK_LIBRARIES 声明是唯一可靠的保证：交给 CMake 的链接依赖
+# 排序 (cmComputeLinkDepends)，它会强制把 libapp_rust.a 排在这些提供方库之前。
 #
 # 已验证不可行的做法:
 #   - target_link_libraries(BEFORE INTERFACE ...) —— CMake 报 "INTERFACE library can
 #     only be used with the INTERFACE keyword"（app_rust_lib 是 IMPORTED 库）;
-#   - $<LINK_GROUP:RESCAN,...> —— IDF 5.5 在 component.cmake / project.cmake 里自行
-#     遍历 INTERFACE_LINK_LIBRARIES 做分类，无法处理该 genexpr，generate 阶段报错。
-#
-# 生效做法: 在 main/CMakeLists.txt 里把 app_rust_lib PREPEND 到 main 组件的库列表，
-# 使其位于所有依赖之前 —— 「Rust 先扫描、依赖后提供」，方向正确。
+#   - 在组件 INTERFACE_LINK_LIBRARIES 里手工前置库或加 -Wl,--start-group 链接组 ——
+#     CMake 会把已出现过的库去重，链接组变空，无效;
+#   - 在根 CMakeLists 里 get/set elf 的 LINK_LIBRARIES 加链接组 —— 直接项排在
+#     INTERFACE 展开项之前，组同样包不住 app_rust_lib。

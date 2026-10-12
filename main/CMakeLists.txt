@@ -3,8 +3,17 @@ idf_component_register(WHOLE_ARCHIVE
                     INCLUDE_DIRS "."
                     REQUIRES app_rust)
 
+# IDF 6.1 的依赖展开阶段会以脚本模式 (cmake -P component_get_requirements.cmake)s
+# 故此后的非脚本化命令需保护，否则脚本模式下会报错。
+if(CMAKE_SCRIPT_MODE_FILE OR "${COMPONENT_LIB}" STREQUAL "")
+    return()
+endif()
+
 # Rust 静态库的链接顺序（关键，详见 components/app_rust/CMakeLists.txt 末尾说明）:
-# app_rust 依赖 cjson / mini_tree / log，拓扑展开会把 libapp_rust.a 排到这些库之后，
-# 而 IDF 5.5 的链接行没有 --start-group，ld 单遍扫描解析不到 Rust 引用的 C 符号。
-# 这里把 app_rust_lib 提到 main 组件库列表的最前，使其先于所有依赖被扫描。
-set_property(TARGET ${COMPONENT_LIB} PREPEND PROPERTY INTERFACE_LINK_LIBRARIES app_rust_lib)
+# libapp_rust.a 引用的 C 符号 (cJSON_* / device_ioctl / esp_log_write) 要求提供方库
+# 排在其**之后**被扫描。该相对顺序现由 app_rust_lib 的 INTERFACE_LINK_LIBRARIES
+# 声明保证（见 components/app_rust/CMakeLists.txt）。
+# 这里把它提到 main 组件库列表最前，只影响其在链接行中的绝对位置，作为冗余保险。
+get_property(_main_link_libs TARGET ${COMPONENT_LIB} PROPERTY INTERFACE_LINK_LIBRARIES)
+set_property(TARGET ${COMPONENT_LIB} PROPERTY INTERFACE_LINK_LIBRARIES
+             app_rust_lib ${_main_link_libs})
