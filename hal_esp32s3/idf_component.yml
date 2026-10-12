@@ -1,0 +1,10 @@
+## hal_esp32s3 (板级 HAL 组件) 的依赖清单
+dependencies:
+  ## WS2812 板载灯珠走 RMT, 依赖 espressif/led_strip
+  ## (mini_tree 侧备注: 当前无 vfs-rmt, 这是唯一允许直接引用厂商 SDK 的产品驱动)
+  ##
+  ## registry_url 显式指向前端域名: 本机 api.components.espressif.com 解析不到(NXDOMAIN),
+  ## 而 components.espressif.com/api/* 可正常访问 (同一套 API)。
+  espressif/led_strip:
+    version: "^3.0.0"
+    registry_url: "https://components.espressif.com"

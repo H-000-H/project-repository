@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 UART — 业务通信口 (mt-uart + mt-uart-client)
+ *
+ * console 日志走 ESP-IDF 自带控制台 (UART0/43-44 或 USB-serial-jtag), 不在这里占节点。
+ * 业务口用 UART1: uart-base = UART_NUM_1; 引脚在 board.dts 之外如需改动改这里。
+ * 只有 mt-uart-client 子节点注册 fops, 业务必须按 client 的 label 查找。
+ */
+#include <hal/uart_types.h>
+
+&soc {
+	communicate_uart: uart@1 {
+		compatible = "mt-uart";
+		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		uart-base  = <UART_NUM_1>;
+		uart-clk   = <0>;
+		uart-baud  = <115200>;
+		data-width = <UART_DATA_8_BITS>;
+		parity     = <UART_PARITY_DISABLE>;
+		stop-bits  = <UART_STOP_BITS_1>;
+
+		/* TX = GPIO17 */
+		tx-port = <0>;
+		tx-pin  = <17>;
+		tx-clk  = <0>;
+		tx-af   = <0>;
+
+		/* RX = GPIO18 */
+		rx-port = <0>;
+		rx-pin  = <18>;
+		rx-clk  = <0>;
+		rx-af   = <0>;
+
+		status = "disabled";
+
+		communicate: communicate-client@0 {
+			compatible = "mt-uart-client";
+			reg = <0>;
+			status = "disabled";
+		};
+	};
+};

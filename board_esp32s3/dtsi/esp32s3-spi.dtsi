@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 SPI — 单工显示总线 (mt-spi-master + mt-spi-master-client)
+ *
+ * 用 SPI2_HOST (FSPI 的默认 IOMUX 脚): SCK=GPIO12 / MOSI=GPIO11 / MISO=GPIO13 / CS=GPIO10。
+ * ESP 无端口/时钟概念: *-port / *-clk 填 0, pin 即 GPIO 编号。
+ * 设备池按节点数自动定容 (DTC_GEN_COUNT_MT_SPI_MASTER...), 无需容量节点。
+ */
+#include <hal/spi_types.h>
+#include <dt-bindings/spi/spi-parameter.h>
+
+&soc {
+	display: spi@0 {
+		compatible = "mt-spi-master";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		spi-base = <SPI2_HOST>;
+		spi-clk  = <0>;
+
+		/* MOSI = GPIO11 */
+		mosi-port = <0>;
+		mosi-pin  = <11>;
+		mosi-clk  = <0>;
+		mosi-af   = <0>;
+
+		/* MISO = GPIO13 (单工用不到, 但 HAL 会无条件初始化, 必须给真实脚) */
+		miso-port = <0>;
+		miso-pin  = <13>;
+		miso-clk  = <0>;
+		miso-af   = <0>;
+
+		/* SCK = GPIO12 */
+		sclk-port = <0>;
+		sclk-pin  = <12>;
+		sclk-clk  = <0>;
+		sclk-af   = <0>;
+
+		irqn = <0>;
+		it-enable = <0>;
+		max-trans-buffer = <2048>;    /* 单次传输上限, 超出由驱动切块 */
+		max-transfer-buffer = <2048>;
+		/* dma-tx-cfg / dma-rx-cfg 不配: 元组长度 <6 视为不用 DMA */
+		status = "disabled";
+
+		/* 显示器从设备: 软件片选; 面板叶子节点在 esp32s3-st7789.dtsi */
+		display_spi_client: spi-master-client@0 {
+			compatible = "mt-spi-master-client";
+			reg = <0>;
+			cs-port = <0>;                 /* CS = GPIO10 */
+			cs-pin  = <10>;
+			cs-clk  = <0>;
+			spi-mode = <SPI_DEFAULT_MODE>; /* CPOL=0 / CPHA=0 */
+			spi-max-frequency = <20000000>;
+			transfer-direction = <0>;
+			data-width = <0>;
+			nss = <0>;                     /* 0 = 软件 NSS */
+			bit-order = <0>;               /* 0 = MSB */
+			crc-calculation = <0>;
+			crc-poly = <0>;
+			standard = <0>;
+			status = "disabled";
+		};
+	};
+};

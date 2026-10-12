@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 SoC 骨架: 根节点 / cpus / soc 挂接点。
+ * 外设片段 (gpio/uart/spi/tim) 统一用 &soc { } 挂进来。
+ */
+#include <dt-bindings/gpio/gpio-parameter.h>
+
+/ {
+	compatible = "espressif,esp32s3";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "espressif,xtensa-lx7";
+			reg = <0>;
+			clock-frequency = <240000000>;
+			status = "disabled";
+		};
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};

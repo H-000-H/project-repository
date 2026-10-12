@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 TIM (LEDC 后端) — ST7789 背光 PWM
+ *
+ * ESP 语义 (见 hal_esp32s3/src/hal_tim_esp32.c):
+ *   clk-periph → PWM 频率 Hz
+ *   autoreload → 占空比分辨率上限 (1023 → 10-bit)
+ *   hw-instance → LEDC timer 序号 (0..3)
+ *   oc0-channel-id → LEDC channel 序号 (0..7)
+ *   oc0-pin → <port pin clk af otype speed mode pull>, ESP 只取 pin
+ */
+#include <dt-bindings/tim/tim-parameter.h>
+
+&soc {
+	tim_bl: tim@0 {
+		compatible = "mt-tim";
+		reg = <0>;
+		tim-mode = <HAL_TIM_MODE_OC>;   /* 输出比较 = PWM */
+		prescaler = <0>;
+		counter-mode = <0>;
+		autoreload = <1023>;            /* 10-bit 占空比 */
+		clock-division = <0>;
+		repetition-counter = <0>;
+		active-chn-mask = <1>;          /* 只用 CH1 */
+		hw-instance = <0>;              /* LEDC timer 0 */
+		clk-periph = <5000>;            /* 5kHz 背光 PWM */
+		irqn = <0>;                     /* 纯 PWM, 不用中断 */
+		interrupt-mask = <0>;
+
+		oc0-compare-value = <0>;        /* 初始占空比 0, 上电不闪 */
+		oc0-oc-mode = <0>;
+		oc0-oc-state = <1>;             /* 使能该通道输出 */
+		oc0-oc-polarity = <0>;
+		oc0-oc-idle-state = <0>;
+		oc0-oc-n-state = <0>;
+		oc0-oc-n-polarity = <0>;
+		oc0-oc-n-idle-state = <0>;
+		oc0-channel-id = <1>;           /* LEDC channel 1 (与 st7789 的 bl-channel 一致) */
+		oc0-chn-mode = <0>;
+		oc0-chn-polarity = <0>;
+		oc0-chn-filter = <0>;
+		oc0-chn-prescaler = <0>;
+		oc0-chn-enable-comp = <0>;
+		/*     <port pin clk af otype speed mode pull> — 背光脚 = GPIO4 */
+		oc0-pin = <0 4 0 0 0 0 0 0>;
+		status = "disabled";
+	};
+};

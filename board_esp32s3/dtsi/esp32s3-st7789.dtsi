@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 ST7789 面板 — 控制脚 (DC/RST) 走 mt-gpios, 背光走 mt-tim
+ *
+ * 依赖: esp32s3-spi.dtsi 先定义出 host (display) 与 client (display_spi_client);
+ *       esp32s3-tim.dtsi 先定义出 tim_bl。
+ */
+#include <hal/gpio_types.h>
+#include <dt-bindings/gpio/gpio-parameter.h>
+
+&soc {
+	/* 命令/数据选择脚: DC = GPIO6, 空闲低 */
+	lcd_dc: gpios-pin@6 {
+		compatible = "mt-gpios";
+		reg = <6>;
+		gpio-port = <0>;
+		gpio-pin  = <6>;
+		gpio-clk  = <0>;
+		gpio-mode = <GPIO_MODE_OUTPUT>;
+		gpio-pull = <GPIO_FLOATING>;
+		default-level = <0>;
+		status = "disabled";
+	};
+
+	/* 复位脚: RST = GPIO7, 空闲高 */
+	lcd_rst: gpios-pin@7 {
+		compatible = "mt-gpios";
+		reg = <7>;
+		gpio-port = <0>;
+		gpio-pin  = <7>;
+		gpio-clk  = <0>;
+		gpio-mode = <GPIO_MODE_OUTPUT>;
+		gpio-pull = <GPIO_FLOATING>;
+		default-level = <1>;
+		status = "disabled";
+	};
+};
+
+/* 面板必须嵌在 SPI client 里 */
+&display_spi_client {
+	st7789: st7789@0 {
+		compatible = "mt-st7789";
+		reg = <0>;
+		width = <320>;              /* 旋转后的列数 (芯片 GRAM 原生 240x320) */
+		height = <240>;             /* 旋转后的行数 */
+		madctl = <0x60>;            /* MX|MV: 交换行列 + 水平镜像; 方向不对改 0xA0 */
+		invert = <0>;               /* 部分模块需要置 1 */
+		bl-active-high = <0>;       /* 背光极性 */
+		bl-channel = <1>;           /* 背光 PWM 通道, 与 tim 的 oc0-channel-id 一致 */
+		dc-gpio = <&lcd_dc>;        /* 命令/数据选择脚 (必填) */
+		reset-gpio = <&lcd_rst>;    /* 复位脚 (可选) */
+		backlight = <&tim_bl>;
+		status = "disabled";
+	};
+};

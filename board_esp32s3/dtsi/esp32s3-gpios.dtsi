@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * ESP32-S3 板级 GPIO 脚 (mt-gpios) — 默认 disabled
+ *
+ * 引脚在 board.dts 里覆盖: &led { gpio-pin = <N>; status = "okay"; }
+ * ESP 无端口基址/时钟概念: gpio-port / gpio-clk 填 0, gpio-pin 即 SoC GPIO 编号;
+ * gpio-mode / gpio-pull 用 IDF 宏 (hal_gpio_esp32.c 直投 gpio_config_t)。
+ */
+#include <hal/gpio_types.h>
+#include <dt-bindings/gpio/gpio-parameter.h>
+
+&soc {
+	/* LED 输出脚: default-level 1 = 上电默认拉高 (灭, 视接线而定) */
+	led: gpios-pin@2 {
+		compatible = "mt-gpios";
+		reg = <2>;
+		gpio-port = <0>;
+		gpio-pin  = <2>;
+		gpio-clk  = <0>;
+		gpio-mode = <GPIO_MODE_OUTPUT>;
+		gpio-pull = <GPIO_FLOATING>;
+		default-level = <1>;
+		status = "disabled";
+	};
+
+	/* 按键输入脚: 内部上拉, 按下为低 (与 app_button.cpp 的 pressed_level 配套) */
+	button1: gpios-pin@0 {
+		compatible = "mt-gpios";
+		reg = <0>;
+		gpio-port = <0>;
+		gpio-pin  = <0>;
+		gpio-clk  = <0>;
+		gpio-mode = <GPIO_MODE_INPUT>;
+		gpio-pull = <GPIO_PULLUP_ONLY>;
+		default-level = <0>;
+		status = "disabled";
+	};
+
+	button2: gpios-pin@47 {
+		compatible = "mt-gpios";
+		reg = <47>;
+		gpio-port = <0>;
+		gpio-pin  = <47>;
+		gpio-clk  = <0>;
+		gpio-mode = <GPIO_MODE_INPUT>;
+		gpio-pull = <GPIO_PULLUP_ONLY>;
+		default-level = <0>;
+		status = "disabled";
+	};
+};
