@@ -67,14 +67,14 @@ public:
     void set_top_text(const char* text);
 
     // 场景根句柄: 页面控件树的父节点 (未 create 时为 nullptr)
-    lv_obj_t* get_screen() const { return this->screen; }
+    lv_obj_t* get_screen() const { return this->screen_; }
 
     /**
      * @brief 注入换页入口
      * @param[in] app App& 组合根
      * @note  Desktop 是 App 的成员, 构造期 App 还没成形, 只能由 App::init 事后注入
      */
-    void bind_router(App& app) { this->router = &app; }
+    void bind_router(App& app) { this->router_ = &app; }
 
     /**
      * @brief 往桌面栅格里加一格图标
@@ -112,19 +112,19 @@ private:
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    lv_obj_t* screen = nullptr;    // 透明场景根 (页面父节点)
-    lv_obj_t* wallpaper = nullptr; // 壁纸 image (父节点是 display 的 active screen)
-    lv_obj_t* top_text = nullptr;  // 顶层提示标签
-    lv_obj_t* app_grid = nullptr;  // 图标栅格 (父节点是 screen)
+    lv_obj_t* screen_ = nullptr;    // 透明场景根 (页面父节点)
+    lv_obj_t* wallpaper_ = nullptr; // 壁纸 image (父节点是 display 的 active screen)
+    lv_obj_t* top_text_ = nullptr;  // 顶层提示标签
+    lv_obj_t* app_grid_ = nullptr;  // 图标栅格 (父节点是 screen)
 
-    etl::array<AppBar, kAppBarMaxCount> bars = {};           // 图标槽位: cell == nullptr 表示空槽
-    App*                                router = nullptr;    // 换页入口 (App::init 注入)
-    AppBar*                             drag_bar = nullptr;  // 拖拽中的格子 (未实现)
-    bool                                bars_visible = true; // 图标是否显示 (锁屏期间为 false)
+    etl::array<AppBar, kAppBarMaxCount> bars_ = {};           // 图标槽位: cell == nullptr 表示空槽
+    App*                                router_ = nullptr;    // 换页入口 (App::init 注入)
+    AppBar*                             drag_bar_ = nullptr;  // 拖拽中的格子 (未实现)
+    bool                                bars_visible_ = true; // 图标是否显示 (锁屏期间为 false)
 
     /* 位图图标素材还没有, 先只留这两个 WIP 钩子; 实现后按 grid 单元格挂进去 */
-    lv_obj_t* mouse_preview = nullptr; /*鼠标位置只有鼠标时生效*/
-    lv_obj_t* hover_obj = nullptr;     /*悬停的对象*/
+    lv_obj_t* mouse_preview_ = nullptr; /*鼠标位置只有鼠标时生效*/
+    lv_obj_t* hover_obj_ = nullptr;     /*悬停的对象*/
 
     void remove_app_bar(etl::string<16>& name);
     void rename_app_bar(etl::string<16>& old_name, etl::string<16>& new_name);

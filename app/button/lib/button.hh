@@ -40,9 +40,9 @@ namespace button
 {
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-inline uint32_t bit = 0; // Button ID allocation bitmap (1<<(id-1) maps to one button)
+inline uint32_t g_bit = 0; // Button ID allocation bitmap (1<<(id-1) maps to one button)
 
-// Count trailing zeros (find position of lowest set bit)
+// Count trailing zeros (find position of lowest set g_bit)
 static inline __attribute__((always_inline)) uint8_t ctz(uint32_t x)
 {
     return static_cast<uint8_t>(__builtin_ctz(x));
@@ -93,25 +93,25 @@ enum class Button_Status
 // Check whether a given id is already allocated
 static inline bool bit_is_used(uint8_t id)
 {
-    return (bit >> (id - 1U)) & 1U;
+    return (g_bit >> (id - 1U)) & 1U;
 }
 
 // Check whether the bitmap is full (all bits allocated)
 static inline bool bit_is_full()
 {
-    return ~bit == 0U;
+    return ~g_bit == 0U;
 }
 
 // Check whether any button has been created
 static inline bool bit_has_any()
 {
-    return bit != 0U;
+    return g_bit != 0U;
 }
 
 // Clear the bitmap (reset all id allocation status)
 static inline void bit_clear()
 {
-    bit = 0U;
+    g_bit = 0U;
 }
 
 // Allocate a free id; returns 0 if bitmap is full
@@ -119,19 +119,19 @@ static inline uint8_t bit_alloc()
 {
     if(bit_is_full())
         return 0U; /* Full, allocation failed */
-    return static_cast<uint8_t>(ctz(~bit) + 1U);
+    return static_cast<uint8_t>(ctz(~g_bit) + 1U);
 }
 
 // Release a given id
 static inline void bit_free(uint8_t id)
 {
-    bit &= ~(1U << (id - 1U));
+    g_bit &= ~(1U << (id - 1U));
 }
 
 // Get the next allocated id (for iteration); returns 0 if none
 static inline uint8_t bit_next(uint8_t from)
 {
-    uint32_t mask = bit >> (from - 1U); /* Skip bits before 'from' */
+    uint32_t mask = g_bit >> (from - 1U); /* Skip bits before 'from' */
     if(mask == 0U)
         return 0U;
     return static_cast<uint8_t>(ctz(mask) + from);
@@ -157,19 +157,19 @@ class Button
 public:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    // Constructor: allocates id and appends to linked list
+    // Constructor: allocates id_ and appends to linked list
     Button()
     {
-        id = bit_alloc(); /* Returns 0 when full; not appended */
-        if(id != 0U)
+        id_ = bit_alloc(); /* Returns 0 when full; not appended */
+        if(id_ != 0U)
             list_append(this);
     }
 
-    // Destructor: releases id and removes from linked list
+    // Destructor: releases id_ and removes from linked list
     ~Button()
     {
-        if(id != 0U)
-            bit_free(id);
+        if(id_ != 0U)
+            bit_free(id_);
         list_remove(this);
     }
 
@@ -212,7 +212,7 @@ public:
      */
     bool callback_register(Button_Callback Callback)
     {
-        event_cb = Callback;
+        event_cb_ = Callback;
         return true;
     }
 #else
@@ -224,8 +224,8 @@ public:
      */
     bool callback_register(Button_Callback Callback, void* user = nullptr)
     {
-        event_cb = Callback;
-        user_data = user;
+        event_cb_ = Callback;
+        user_data_ = user;
         return true;
     }
 #endif
@@ -233,21 +233,21 @@ public:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /**
-     * @brief Read current event
-     * @return current event value
+     * @brief Read current event_
+     * @return current event_ value
      */
     Button_Event event_read()
     {
-        return event;
+        return event_;
     }
 
     /**
-     * @brief Read button id
-     * @return id value
+     * @brief Read button id_
+     * @return id_ value
      */
     uint8_t read_id()
     {
-        return id;
+        return id_;
     }
 
     /**
@@ -256,16 +256,16 @@ public:
      */
     Button_Status read_status()
     {
-        return status;
+        return status_;
     }
 
     /**
      * @brief Read whether currently pressed
-     * @return pressed_value (0 = not pressed / 1 = pressed)
+     * @return pressed_value_ (0 = not pressed / 1 = pressed)
      */
     uint8_t read_pressed()
     {
-        return pressed_value;
+        return pressed_value_;
     }
 
     /**
@@ -274,7 +274,7 @@ public:
      */
     void set_preesed(uint8_t level)
     {
-        pressed_value = (level != kNot_Pressed) ? kPressed : kNot_Pressed;
+        pressed_value_ = (level != kNot_Pressed) ? kPressed : kNot_Pressed;
     }
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -286,32 +286,32 @@ public:
     bool update()
     {
         /* Non-default state: accumulate one scan period's ms each cycle; cap to prevent uint32 overflow re-triggering short/long press */
-        if(status != Button_Status::kNone)
+        if(status_ != Button_Status::kNone)
         {
-            scan_cnt += kScan_Freq_Ms;
+            scan_cnt_ += kScan_Freq_Ms;
             /* Cap at max of long-hold and multi-click settlement; multi-click uses strict greater-than, so add one extra scan period margin */
             uint32_t cap = long_hold_trigger_ms;
             uint32_t multiple_click_cap = static_cast<uint32_t>(max_multiple_clicks_interval_ms) + kScan_Freq_Ms;
             if(multiple_click_cap > cap)
                 cap = multiple_click_cap;
-            if(scan_cnt > cap)
-                scan_cnt = cap;
+            if(scan_cnt_ > cap)
+                scan_cnt_ = cap;
         }
 
-        switch(status)
+        switch(status_)
         {
         case Button_Status::kNone:
             /* Default state: press detected → trigger first press, enter pressed state */
             if(is_preesed())
             {
-                scan_cnt = 0;
-                click_cnt = 0;
+                scan_cnt_ = 0;
+                click_cnt_ = 0;
                 trigger(Button_Event::kPressed_Down);
-                status = Button_Status::kPressed;
+                status_ = Button_Status::kPressed;
             }
             else
             {
-                event = Button_Event::kPressed_None;
+                event_ = Button_Event::kPressed_None;
             }
             break;
 
@@ -319,54 +319,54 @@ public:
             if(is_preesed())
             {
                 /* Still pressed: determine long/short press first */
-                if(scan_cnt >= long_hold_trigger_ms)
+                if(scan_cnt_ >= long_hold_trigger_ms)
                 {
                     /* Long hold reached: trigger only once */
-                    if(event != Button_Event::kPressed_Long_Hold)
+                    if(event_ != Button_Event::kPressed_Long_Hold)
                         trigger(Button_Event::kPressed_Long_Hold);
                 }
-                else if(scan_cnt >= long_press_trigger_ms)
+                else if(scan_cnt_ >= long_press_trigger_ms)
                 {
                     /* Long press start reached: trigger only once */
-                    if(event != Button_Event::kPressed_Long_Start)
+                    if(event_ != Button_Event::kPressed_Long_Start)
                         trigger(Button_Event::kPressed_Long_Start);
                 }
-                else if(scan_cnt >= short_press_trigger_ms)
+                else if(scan_cnt_ >= short_press_trigger_ms)
                 {
                     /* Short press start reached: trigger only once */
-                    if(event != Button_Event::kPressed_Short_Start)
+                    if(event_ != Button_Event::kPressed_Short_Start)
                         trigger(Button_Event::kPressed_Short_Start);
                 }
             }
             else
             {
-                /* Released: accumulated time determines the trigger event */
-                if(scan_cnt >= long_hold_trigger_ms)
+                /* Released: accumulated time determines the trigger event_ */
+                if(scan_cnt_ >= long_hold_trigger_ms)
                 {
                     trigger(Button_Event::kPressed_Long_Hold_Over);
-                    event = Button_Event::kPressed_None;
-                    status = Button_Status::kNone;
+                    event_ = Button_Event::kPressed_None;
+                    status_ = Button_Status::kNone;
                 }
-                else if(scan_cnt >= long_press_trigger_ms)
+                else if(scan_cnt_ >= long_press_trigger_ms)
                 {
                     trigger(Button_Event::kPressed_Long_Over);
-                    event = Button_Event::kPressed_None;
-                    status = Button_Status::kNone;
+                    event_ = Button_Event::kPressed_None;
+                    status_ = Button_Status::kNone;
                 }
-                else if(scan_cnt >= short_press_trigger_ms)
+                else if(scan_cnt_ >= short_press_trigger_ms)
                 {
                     trigger(Button_Event::kPressed_Short_Over);
                     /* Short press released: enter multi-click judgment state, accumulate click count */
-                    scan_cnt = 0;
-                    click_cnt++;
-                    status = Button_Status::kMultiple_Click;
+                    scan_cnt_ = 0;
+                    click_cnt_++;
+                    status_ = Button_Status::kMultiple_Click;
                 }
                 else
                 {
                     /* Press too short: enter multi-click judgment state, accumulate click count */
-                    scan_cnt = 0;
-                    click_cnt++;
-                    status = Button_Status::kMultiple_Click;
+                    scan_cnt_ = 0;
+                    click_cnt_++;
+                    status_ = Button_Status::kMultiple_Click;
                 }
             }
             break;
@@ -379,23 +379,23 @@ public:
                  * falling edge, so this is reached on a real re-press only.
                  * kPressed_Down must be re-fired here, otherwise the app keeps the
                  * timestamp of the *previous* press and the press duration is wrong. */
-                scan_cnt = 0;
+                scan_cnt_ = 0;
                 trigger(Button_Event::kPressed_Down);
-                status = Button_Status::kPressed;
+                status_ = Button_Status::kPressed;
             }
             else
             {
-                /* No press within multi-click interval: settle single/double/repeat click event */
-                if(scan_cnt > max_multiple_clicks_interval_ms)
+                /* No press within multi-click interval: settle single/double/repeat click event_ */
+                if(scan_cnt_ > max_multiple_clicks_interval_ms)
                 {
-                    trigger(click_cnt >= kRepeat_Click_Threshold
+                    trigger(click_cnt_ >= kRepeat_Click_Threshold
                                 ? Button_Event::kPressed_Repeat_Click
-                            : click_cnt >= 2
+                            : click_cnt_ >= 2
                                 ? Button_Event::kDouble_Pressed_Click
                                 : Button_Event::kSignal_Pressed_Click);
-                    click_cnt = 0;
-                    event = Button_Event::kPressed_None; /* Clear event after settlement */
-                    status = Button_Status::kNone;
+                    click_cnt_ = 0;
+                    event_ = Button_Event::kPressed_None; /* Clear event_ after settlement */
+                    status_ = Button_Status::kNone;
                 }
             }
             break;
@@ -415,14 +415,14 @@ public:
     static uint8_t scan()
     {
         uint8_t active_cnt = 0;
-        Button* current_node = s_head;
+        Button* current_node = s_head_;
 
         while(current_node)
         {
             current_node->update();
-            if(current_node->status != Button_Status::kNone)
+            if(current_node->status_ != Button_Status::kNone)
                 active_cnt++;
-            current_node = current_node->next;
+            current_node = current_node->next_;
         }
         return active_cnt;
     }
@@ -430,38 +430,38 @@ private:
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 #ifdef BUTTON_FEATURE_ETL
-    Button_Callback event_cb; // Callback object (delegate)
+    Button_Callback event_cb_; // Callback object (delegate)
 #else
-    Button_Callback event_cb = nullptr;  // Callback function pointer
-    void*           user_data = nullptr; // User data pointer
+    Button_Callback event_cb_ = nullptr;  // Callback function pointer
+    void*           user_data_ = nullptr; // User data pointer
 #endif
 
-    static Button* s_head; // Singly linked list head
+    static Button* s_head_; // Singly linked list head
 
-    Button*       next = nullptr;                      // Linked list node pointer
-    uint32_t      scan_cnt = 0;                        // Scan counter (accumulated ms while pressed)
-    uint16_t      click_cnt = 0;                       // Click count (for single/double/repeat settlement)
-    uint8_t       id = 0;                              // Button id (allocated by ctz at compile time)
-    Button_Status status = Button_Status::kNone;       // Current state machine state
-    Button_Event  event = Button_Event::kPressed_None; // Current trigger event
-    uint8_t       pressed_value = kNot_Pressed;        // Whether currently pressed (0 = not / 1 = pressed)
-    bool          debounce_primed = false;             // First scan after boot has no release edge: treated as stable-released (prevents phantom click)
+    Button*       next_ = nullptr;                      // Linked list node pointer
+    uint32_t      scan_cnt_ = 0;                        // Scan counter (accumulated ms while pressed)
+    uint16_t      click_cnt_ = 0;                       // Click count (for single/double/repeat settlement)
+    uint8_t       id_ = 0;                              // Button id_ (allocated by ctz at compile time)
+    Button_Status status_ = Button_Status::kNone;       // Current state machine state
+    Button_Event  event_ = Button_Event::kPressed_None; // Current trigger event_
+    uint8_t       pressed_value_ = kNot_Pressed;        // Whether currently pressed (0 = not / 1 = pressed)
+    bool          debounce_primed_ = false;             // First scan after boot has no release edge: treated as stable-released (prevents phantom click)
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /**
-     * @brief Set event and trigger callback
-     * @param evt event to trigger
+     * @brief Set event_ and trigger callback
+     * @param evt event_ to trigger
      */
     void trigger(Button_Event evt)
     {
-        event = evt;
+        event_ = evt;
 #ifdef BUTTON_FEATURE_ETL
-        if(event_cb)
-            event_cb(*this);
+        if(event_cb_)
+            event_cb_(*this);
 #else
-        if(event_cb)
-            event_cb(user_data, *this);
+        if(event_cb_)
+            event_cb_(user_data_, *this);
 #endif
     }
 
@@ -471,8 +471,8 @@ private:
      */
     static void list_append(Button* self)
     {
-        self->next = s_head;
-        s_head = self;
+        self->next_ = s_head_;
+        s_head_ = self;
     }
 
     /**
@@ -481,16 +481,16 @@ private:
      */
     static void list_remove(Button* self)
     {
-        Button** cur = &s_head;
+        Button** cur = &s_head_;
         while(*cur)
         {
             if(*cur == self)
             {
-                *cur = self->next;
-                self->next = nullptr;
+                *cur = self->next_;
+                self->next_ = nullptr;
                 return;
             }
-            cur = &(*cur)->next;
+            cur = &(*cur)->next_;
         }
     }
 
@@ -503,10 +503,10 @@ private:
     {
         uint32_t now = static_cast<uint32_t>(get_tick());
 
-        if(pressed_value == kPressed)
+        if(pressed_value_ == kPressed)
         {
             release_debounce_start_tick = 0; /* Enter press, reset release debounce */
-            debounce_primed = true;          /* Real press seen: later release edges must debounce normally */
+            debounce_primed_ = true;         /* Real press seen: later release edges must debounce normally */
             if(debounce_ms == 0)
                 return true; /* Debounce disabled: return directly */
             if(press_debounce_start_tick == 0)
@@ -519,10 +519,10 @@ private:
             if(debounce_ms == 0)
                 return false; /* Debounce disabled: return directly */
 
-            if(!debounce_primed)
+            if(!debounce_primed_)
             {
-                /* make initial status is stable */
-                debounce_primed = true;
+                /* make initial status_ is stable */
+                debounce_primed_ = true;
                 release_debounce_start_tick = now ? now : 1u;
                 return false;
             }
@@ -537,12 +537,12 @@ private:
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 // Button singly linked list head (defined outside class, shared by all buttons)
-inline Button* Button::s_head = nullptr;
+inline Button* Button::s_head_ = nullptr;
 
 // Read the number of allocated buttons
 inline uint8_t read_num()
 {
-    return static_cast<uint8_t>(__builtin_popcount(bit));
+    return static_cast<uint8_t>(__builtin_popcount(g_bit));
 }
 
 // Return system milliseconds

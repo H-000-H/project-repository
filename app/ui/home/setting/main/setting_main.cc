@@ -19,7 +19,7 @@ constexpr const char* const kTag = "setting_main";
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-SettingMain::SettingMain(App& app) : Page(PageQuit::HIDE, "setting"), app(app)
+SettingMain::SettingMain(App& app) : Page(PageQuit::HIDE, "setting"), app_(app)
 {
 }
 
@@ -54,7 +54,7 @@ void SettingMain::enter(lv_obj_t* parent)
         create_option_power();
         /* 返回键只挂一次: bind_back_key 是无条件 add_event_cb,
            复用时再挂一次会让一次 ESC 连退多层 */
-        this->app.bind_back_key(this->option_blue);
+        this->app_.bind_back_key(this->option_blue_);
     }
 
     this->grab_focus();
@@ -62,14 +62,14 @@ void SettingMain::enter(lv_obj_t* parent)
 
 void SettingMain::grab_focus()
 {
-    lv_group_t* group = this->app.get_group();
-    if((group == nullptr) || (this->option_blue == nullptr))
+    lv_group_t* group = this->app_.get_group();
+    if((group == nullptr) || (this->option_blue_ == nullptr))
     {
         return; /* 指针后端(PC)没有焦点组, 正常 */
     }
     /* keypad 只把键发给组内聚焦的那个对象, 不进组等于按什么键都没反应 */
-    lv_group_add_obj(group, this->option_blue);
-    lv_group_focus_obj(this->option_blue);
+    lv_group_add_obj(group, this->option_blue_);
+    lv_group_focus_obj(this->option_blue_);
 }
 
 void SettingMain::exit()
@@ -79,13 +79,13 @@ void SettingMain::exit()
 
 bool SettingMain::create_scroll()
 {
-    if(this->scroll != nullptr)
+    if(this->scroll_ != nullptr)
     {
         MT_LOG_ERROR(kTag, "create_scroll: scroll has been created");
         return true;
     }
-    this->scroll = setting_base::create_scroll(get_root());
-    if(this->scroll == nullptr)
+    this->scroll_ = setting_base::create_scroll(get_root());
+    if(this->scroll_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "create_scroll failed");
         return false;
@@ -97,42 +97,42 @@ void SettingMain::destroy_widgets()
 {
     destroy_root();
     /* 子控件lvgl自己释放 */
-    this->scroll = nullptr;
-    this->option_blue = nullptr;
-    this->option_blue_text = nullptr;
-    this->option_net = nullptr;
-    this->option_net_text = nullptr;
-    this->option_power = nullptr;
-    this->option_power_text = nullptr;
+    this->scroll_ = nullptr;
+    this->option_blue_ = nullptr;
+    this->option_blue_text_ = nullptr;
+    this->option_net_ = nullptr;
+    this->option_net_text_ = nullptr;
+    this->option_power_ = nullptr;
+    this->option_power_text_ = nullptr;
 }
 
 bool SettingMain::create_option_blue()
 {
-    if(this->scroll == nullptr)
+    if(this->scroll_ == nullptr)
     {
         return false;
     }
-    return setting_base::create_option(this->scroll, "blue or other link", LV_PCT(90), LV_PCT(15),
-                                       &this->option_blue, &this->option_blue_text);
+    return setting_base::create_option(this->scroll_, "blue or other link", LV_PCT(90), LV_PCT(15),
+                                       &this->option_blue_, &this->option_blue_text_);
 }
 
 bool SettingMain::create_option_net()
 {
-    if(this->scroll == nullptr)
+    if(this->scroll_ == nullptr)
     {
         return false;
     }
-    return setting_base::create_option(this->scroll, "net", LV_PCT(90), LV_PCT(15),
-                                       &this->option_net, &this->option_net_text);
+    return setting_base::create_option(this->scroll_, "net", LV_PCT(90), LV_PCT(15),
+                                       &this->option_net_, &this->option_net_text_);
 }
 
 bool SettingMain::create_option_power()
 {
-    if(this->scroll == nullptr)
+    if(this->scroll_ == nullptr)
     {
         return false;
     }
-    return setting_base::create_option(this->scroll, "power", LV_PCT(90), LV_PCT(15),
-                                       &this->option_power, &this->option_power_text);
+    return setting_base::create_option(this->scroll_, "power", LV_PCT(90), LV_PCT(15),
+                                       &this->option_power_, &this->option_power_text_);
 }
 } // namespace ui

@@ -68,7 +68,7 @@ static_assert((sizeof(kAppRowDsc) / sizeof(kAppRowDsc[0])) == static_cast<size_t
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 bool Desktop::create(lv_display_t* disp)
 {
-    if(this->screen != nullptr)
+    if(this->screen_ != nullptr)
     {
         return true;
     }
@@ -80,31 +80,31 @@ bool Desktop::create(lv_display_t* disp)
 
     lv_obj_t* const scene = lv_display_get_screen_active(disp);
 
-    this->wallpaper = lv_image_create(scene);
-    if(this->wallpaper == nullptr)
+    this->wallpaper_ = lv_image_create(scene);
+    if(this->wallpaper_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "wallpaper create failed");
         return false;
     }
-    lv_image_set_src(this->wallpaper, &desktop_320x240);
-    lv_obj_align(this->wallpaper, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_image_set_src(this->wallpaper_, &desktop_320x240);
+    lv_obj_align(this->wallpaper_, LV_ALIGN_TOP_LEFT, 0, 0);
 
-    this->screen = lv_obj_create(scene);
-    if(this->screen == nullptr)
+    this->screen_ = lv_obj_create(scene);
+    if(this->screen_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "screen create failed");
         return false;
     }
-    lv_obj_set_size(this->screen, LV_PCT(100), LV_PCT(100));
-    lv_obj_align(this->screen, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_set_size(this->screen_, LV_PCT(100), LV_PCT(100));
+    lv_obj_align(this->screen_, LV_ALIGN_TOP_LEFT, 0, 0);
     /* 消除默认屏幕的边距与装饰, 只要一个透明容器 */
-    lv_obj_set_style_pad_all(this->screen, 0, LV_PART_MAIN);
-    lv_obj_set_style_border_width(this->screen, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(this->screen, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(this->screen_, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(this->screen_, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(this->screen_, LV_OPA_TRANSP, LV_PART_MAIN);
 
     /* 图标栅格: 早于任何页面建树 → 页面盖在它上面, 只剩外壳时图标才露出来 */
-    this->app_grid = lv_obj_create(this->screen);
-    if(this->app_grid == nullptr)
+    this->app_grid_ = lv_obj_create(this->screen_);
+    if(this->app_grid_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "app grid create failed");
         return false;
@@ -122,25 +122,25 @@ bool Desktop::create(lv_display_t* disp)
         MT_LOG_WARN(kTag, "行高 %d 放不下名字一行(%d): 调小 kAppIconHeightPct 或调大 kAppGridHeightPct",
                     static_cast<int>(row_h), static_cast<int>(kAppNameLinePx));
     }
-    lv_obj_set_size(this->app_grid, LV_PCT(90), grid_h);
-    lv_obj_align(this->app_grid, LV_ALIGN_TOP_MID, 0, LV_PCT(kAppGridTopPct));
-    lv_obj_set_grid_dsc_array(this->app_grid, kAppColDsc, kAppRowDsc);
-    lv_obj_set_style_bg_opa(this->app_grid, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_width(this->app_grid, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(this->app_grid, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(this->app_grid, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_column(this->app_grid, 8, LV_PART_MAIN);
-    lv_obj_set_style_pad_row(this->app_grid, 8, LV_PART_MAIN);
-    lv_obj_set_scrollbar_mode(this->app_grid, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_size(this->app_grid_, LV_PCT(90), grid_h);
+    lv_obj_align(this->app_grid_, LV_ALIGN_TOP_MID, 0, LV_PCT(kAppGridTopPct));
+    lv_obj_set_grid_dsc_array(this->app_grid_, kAppColDsc, kAppRowDsc);
+    lv_obj_set_style_bg_opa(this->app_grid_, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(this->app_grid_, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(this->app_grid_, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(this->app_grid_, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(this->app_grid_, 8, LV_PART_MAIN);
+    lv_obj_set_style_pad_row(this->app_grid_, 8, LV_PART_MAIN);
+    lv_obj_set_scrollbar_mode(this->app_grid_, LV_SCROLLBAR_MODE_OFF);
 
     return true;
 }
 
 void Desktop::set_wallpaper(const lv_image_dsc_t& image)
 {
-    if(this->wallpaper != nullptr)
+    if(this->wallpaper_ != nullptr)
     {
-        lv_image_set_src(this->wallpaper, &image);
+        lv_image_set_src(this->wallpaper_, &image);
     }
 }
 
@@ -150,32 +150,32 @@ void Desktop::set_top_text(const char* text)
     {
         return;
     }
-    if((this->top_text == nullptr) && !this->create_top_label())
+    if((this->top_text_ == nullptr) && !this->create_top_label())
     {
         return;
     }
-    lv_label_set_text(this->top_text, text);
+    lv_label_set_text(this->top_text_, text);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 bool Desktop::create_top_label()
 {
-    if(this->screen == nullptr)
+    if(this->screen_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "screen 还没建, 先 create()");
         return false;
     }
-    this->top_text = lv_label_create(this->screen);
-    if(this->top_text == nullptr)
+    this->top_text_ = lv_label_create(this->screen_);
+    if(this->top_text_ == nullptr)
     {
         return false;
     }
-    lv_obj_set_size(this->top_text, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_align(this->top_text, LV_ALIGN_TOP_MID, 0, LV_PCT(10));
-    lv_obj_set_style_text_align(this->top_text, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_set_style_text_font(this->top_text, kTopTextFont, LV_PART_MAIN);
-    lv_obj_set_style_text_color(this->top_text, HomeColor::kBlue, LV_PART_MAIN);
+    lv_obj_set_size(this->top_text_, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_align(this->top_text_, LV_ALIGN_TOP_MID, 0, LV_PCT(10));
+    lv_obj_set_style_text_align(this->top_text_, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_text_font(this->top_text_, kTopTextFont, LV_PART_MAIN);
+    lv_obj_set_style_text_color(this->top_text_, HomeColor::kBlue, LV_PART_MAIN);
     return true;
 }
 
@@ -183,7 +183,7 @@ bool Desktop::create_top_label()
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 bool Desktop::add_app_bar(const char* icon, const char* text, const char* page, const void* image_src)
 {
-    if(this->app_grid == nullptr)
+    if(this->app_grid_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "add_app_bar: grid not created, first try create()");
         return false;
@@ -205,7 +205,7 @@ bool Desktop::add_app_bar(const char* icon, const char* text, const char* page, 
     uint8_t slot = kAppBarMaxCount;
     for(uint8_t i = 0; i < kAppBarMaxCount; ++i)
     {
-        if(this->bars[i].cell == nullptr)
+        if(this->bars_[i].cell == nullptr)
         {
             slot = i;
             break;
@@ -218,8 +218,8 @@ bool Desktop::add_app_bar(const char* icon, const char* text, const char* page, 
         return false;
     }
 
-    AppBar& bar = this->bars[slot];
-    bar.cell = lv_obj_create(this->app_grid);
+    AppBar& bar = this->bars_[slot];
+    bar.cell = lv_obj_create(this->app_grid_);
     if(bar.cell == nullptr)
     {
         return false;
@@ -287,7 +287,7 @@ bool Desktop::add_app_bar(const char* icon, const char* text, const char* page, 
         /* user_data 传 this: 回调里按被点的格子反查槽位 */
         lv_obj_add_event_cb(bar.cell, app_bar_clicked_cb, LV_EVENT_CLICKED, this);
     }
-    if(!this->bars_visible)
+    if(!this->bars_visible_)
     {
         lv_obj_set_hidden(bar.cell, true); /* 锁屏期间补加的图标也不显示 */
     }
@@ -296,10 +296,10 @@ bool Desktop::add_app_bar(const char* icon, const char* text, const char* page, 
 
 void Desktop::set_app_bar_visible(bool vis)
 {
-    this->bars_visible = vis;
+    this->bars_visible_ = vis;
     for(uint8_t i = 0; i < kAppBarMaxCount; ++i)
     {
-        lv_obj_t* const cell = this->bars[i].cell;
+        lv_obj_t* const cell = this->bars_[i].cell;
         if(cell == nullptr)
         {
             continue;
@@ -318,17 +318,17 @@ void Desktop::app_bar_clicked_cb(lv_event_t* e)
     lv_obj_t* const cell = lv_event_get_current_target_obj(e);
     for(uint8_t i = 0; i < kAppBarMaxCount; ++i)
     {
-        if(self->bars[i].cell != cell)
+        if(self->bars_[i].cell != cell)
         {
             continue;
         }
-        if(self->router == nullptr)
+        if(self->router_ == nullptr)
         {
             MT_LOG_ERROR(kTag, "router 没注入, 图标的跳页请求丢弃");
             return;
         }
         /* 只排队: 真正的换页/拆树在下一轮 App::tick, 不在本回调栈上 */
-        self->router->show_page(self->bars[i].page);
+        self->router_->show_page(self->bars_[i].page);
         return;
     }
 }

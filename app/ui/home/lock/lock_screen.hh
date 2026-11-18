@@ -104,16 +104,16 @@ private:
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    App&               app;                                       // 组合根: 外壳与焦点组的入口
-    app::LockPassword& store = app::LockPassword::get_instance(); // 常驻密码服务
-    LockState          state = LockState::LOCKED;                 // 页面状态
-    std::uint8_t       fail_count = 0U;                           // 连续失败次数
+    App&               app_;                                       // 组合根: 外壳与焦点组的入口
+    app::LockPassword& store_ = app::LockPassword::get_instance(); // 常驻密码服务
+    LockState          state_ = LockState::LOCKED;                 // 页面状态
+    std::uint8_t       fail_count_ = 0U;                           // 连续失败次数
 
     /* 控件树根由基类 Page 持有, 这里只留派生类要单独动的两个 */
-    lv_obj_t*   textarea = nullptr;  // 密码输入框 (根的第一个子节点)
-    lv_obj_t*   tip_label = nullptr; // 提示标签
-    lv_timer_t* tip_timer = nullptr; // 提示 1.5s 一次性定时器
-    lv_style_t  style_glass;         // 玻璃卡片样式
+    lv_obj_t*   textarea_ = nullptr;  // 密码输入框 (根的第一个子节点)
+    lv_obj_t*   tip_label_ = nullptr; // 提示标签
+    lv_timer_t* tip_timer_ = nullptr; // 提示 1.5s 一次性定时器
+    lv_style_t  style_glass_;         // 玻璃卡片样式
 };
 } // namespace ui
 

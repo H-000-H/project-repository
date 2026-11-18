@@ -100,9 +100,9 @@ private:
     // 顶栏单项: 名字(查找 key + label 文本源) + 控件句柄 + 段位
     struct Item
     {
-        etl::string<kItemNameLen> name;            // 拥有拷贝
-        lv_obj_t*                 obj = nullptr;   // label 控件
-        bool                      is_head = false; // true = 左段, false = 右段
+        etl::string<kItemNameLen> name_;            // 拥有拷贝
+        lv_obj_t*                 obj_ = nullptr;   // label 控件
+        bool                      is_head_ = false; // true = 左段, false = 右段
     };
 
     using ItemList = etl::vector<Item, kMaxItems>;
@@ -127,10 +127,10 @@ private:
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    lv_obj_t* bar = nullptr;      // 条本体 (挂 screen 顶部)
-    lv_obj_t* head_row = nullptr; // 左段: flex_grow=1 吃满剩余宽度
-    lv_obj_t* tail_row = nullptr; // 右段: LV_SIZE_CONTENT 被挤到最右
-    ItemList  items;              // 有序项表
+    lv_obj_t* bar_ = nullptr;      // 条本体 (挂 screen 顶部)
+    lv_obj_t* head_row_ = nullptr; // 左段: flex_grow=1 吃满剩余宽度
+    lv_obj_t* tail_row_ = nullptr; // 右段: LV_SIZE_CONTENT 被挤到最右
+    ItemList  items_;              // 有序项表
 };
 } // namespace ui
 

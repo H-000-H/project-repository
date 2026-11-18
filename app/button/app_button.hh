@@ -49,9 +49,9 @@ private:
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    static HookFn s_open;   // 任务启动时调一次
-    static HookFn s_sample; // 每周期调一次
-    static void*  s_ctx;    // 钩子上下文
+    static HookFn s_open_;   // 任务启动时调一次
+    static HookFn s_sample_; // 每周期调一次
+    static void*  s_ctx_;    // 钩子上下文
 
     static constexpr std::uint16_t kStackSize = 2048; // mini-os 线程栈 (字节)
     static constexpr const char*   kThreadName = "ButtonTask";

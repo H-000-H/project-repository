@@ -58,21 +58,21 @@ public:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     // 是否尚未设置密码
-    bool empty() const { return this->pwd.empty(); }
+    bool empty() const { return this->pwd_.empty(); }
 
     // 读取当前锁定状态; true = 已锁定
-    bool is_locked() const { return this->is_lock.load(etl::memory_order_relaxed); }
+    bool is_locked() const { return this->is_lock_.load(etl::memory_order_relaxed); }
 
     /**
      * @brief 设置锁定状态
      * @param[in] locked bool true 锁定, false 解锁
      */
-    void set_locked(bool locked) { this->is_lock.store(locked, etl::memory_order_relaxed); }
+    void set_locked(bool locked) { this->is_lock_.store(locked, etl::memory_order_relaxed); }
 protected:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    etl::string<kLockPasswordMaxLen> pwd;           // 密码明文 (定容)
-    etl::atomic_bool                 is_lock{true}; // 锁定状态 (原子)
+    etl::string<kLockPasswordMaxLen> pwd_;           // 密码明文 (定容)
+    etl::atomic_bool                 is_lock_{true}; // 锁定状态 (原子)
 };
 } // namespace app
 

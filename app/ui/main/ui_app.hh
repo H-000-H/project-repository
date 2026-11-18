@@ -93,22 +93,22 @@ public:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     // 当前页注册名; 只剩外壳时为 "(none)"
-    const char* current_page_name() const { return (this->current != nullptr) ? this->current->name() : "(none)"; }
+    const char* current_page_name() const { return (this->current_ != nullptr) ? this->current_->name() : "(none)"; }
 
     // 返回栈里现在几层(含当前页); 0 = 只剩外壳
-    std::size_t stack_depth() const { return this->stack.size(); }
+    std::size_t stack_depth() const { return this->stack_.size(); }
 
     // 桌面外壳 (页面挂控件树 / 改提示文字用)
-    Desktop& get_desktop() { return this->desktop; }
+    Desktop& get_desktop() { return this->desktop_; }
 
     // 顶栏外壳 (页面改状态栏项用)
-    TopBar& get_top_bar() { return this->top_bar; }
+    TopBar& get_top_bar() { return this->top_bar_; }
 
     // 本会话的 display
-    lv_display_t* display() const { return this->disp; }
+    lv_display_t* display() const { return this->disp_; }
 
     // 输入后端 (换模式/查状态用), 未装时为 nullptr
-    InputBackend* get_input() const { return this->input; }
+    InputBackend* get_input() const { return this->input_; }
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -139,8 +139,8 @@ private:
     // 一条换页请求 (只有一个槽位: 后到的覆盖先到的, 覆盖时打日志)
     struct RouteRequest
     {
-        RouteOp op = RouteOp::NONE;
-        Page*   target = nullptr;
+        RouteOp op_ = RouteOp::NONE;
+        Page*   target_ = nullptr;
     };
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -196,15 +196,15 @@ private:
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    Desktop       desktop;         // 常驻: 壁纸 + 场景根 + 提示文字
-    TopBar        top_bar;         // 常驻: 顶部状态栏
-    lv_display_t* disp = nullptr;  // 本会话的 display
-    InputBackend* input = nullptr; // 输入后端 (非拥有指针)
+    Desktop       desktop_;         // 常驻: 壁纸 + 场景根 + 提示文字
+    TopBar        top_bar_;         // 常驻: 顶部状态栏
+    lv_display_t* disp_ = nullptr;  // 本会话的 display
+    InputBackend* input_ = nullptr; // 输入后端 (非拥有指针)
 
-    etl::array<Page*, kPageSlotMax> table{};           // 页表: 存指针, 名字问 page->name()
-    etl::vector<Page*, kStackDepth> stack{};           // 返回栈: 栈底是首页
-    Page*                           current = nullptr; // 当前页 (非拥有指针)
-    RouteRequest                    pending{};         // 攒着待执行的换页请求
+    etl::array<Page*, kPageSlotMax> table_{};           // 页表: 存指针, 名字问 page->name()
+    etl::vector<Page*, kStackDepth> stack_{};           // 返回栈: 栈底是首页
+    Page*                           current_ = nullptr; // 当前页 (非拥有指针)
+    RouteRequest                    pending_{};         // 攒着待执行的换页请求
 };
 } // namespace ui
 

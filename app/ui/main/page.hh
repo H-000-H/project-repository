@@ -37,7 +37,7 @@ public:
      * @param[in] quit PageQuit    默认收场方式
      * @param[in] name const char* 注册名 (字面量常驻, 只存指针)
      */
-    Page(PageQuit quit, const char* name) : quit_on_exit(quit), page_name(name) {}
+    Page(PageQuit quit, const char* name) : quit_on_exit_(quit), page_name_(name) {}
     virtual ~Page() = default;
 
     Page(const Page&) = delete;
@@ -66,10 +66,10 @@ public:
     virtual bool is_finished() const = 0;
 
     // 注册名 (日志和查表都用它)
-    const char* name() const { return this->page_name; }
+    const char* name() const { return this->page_name_; }
 
     // 离开时的收场方式
-    PageQuit quit_mode() const { return this->quit_on_exit; }
+    PageQuit quit_mode() const { return this->quit_on_exit_; }
 
     /**
      * @brief 改收场方式 (运行期随时可换)
@@ -77,7 +77,7 @@ public:
      * @note  只能在 UI 线程、App::tick 的换页执行里或页面自己的 enter/tick 里调;
      *        别在 hide/exit 执行途中改 —— App 正按旧值分派
      */
-    void set_quit_mode(PageQuit quit) { this->quit_on_exit = quit; }
+    void set_quit_mode(PageQuit quit) { this->quit_on_exit_ = quit; }
 
     /**
      * @brief 设置页面宽度 (按屏宽百分比)
@@ -99,23 +99,23 @@ public:
      */
     virtual void hide()
     {
-        if(this->root != nullptr)
+        if(this->root_ != nullptr)
         {
-            lv_obj_set_hidden(this->root, true);
+            lv_obj_set_hidden(this->root_, true);
         }
     }
 
     // 控件树还在不在(隐藏着也算在)
-    bool has_widgets() const { return this->root != nullptr; }
+    bool has_widgets() const { return this->root_ != nullptr; }
 protected:
     /**
      * @brief 登记根对象 (之后隐藏/复用/拆除都认它)
      * @param[in] root lv_obj_t* 本页控件树根
      */
-    void set_root(lv_obj_t* root) { this->root = root; }
+    void set_root(lv_obj_t* root) { this->root_ = root; }
 
     // 根对象; 没建时 nullptr
-    lv_obj_t* get_root() const { return this->root; }
+    lv_obj_t* get_root() const { return this->root_; }
 
     /**
      * @brief 复用隐藏中的树: 取消隐藏
@@ -123,29 +123,29 @@ protected:
      */
     bool reuse_root()
     {
-        if((this->root == nullptr) || !lv_obj_is_hidden(this->root))
+        if((this->root_ == nullptr) || !lv_obj_is_hidden(this->root_))
         {
             return false;
         }
-        lv_obj_set_hidden(this->root, false);
+        lv_obj_set_hidden(this->root_, false);
         return true;
     }
 
     // 拆掉根对象并清登记 (派生类删树只能走这里, 直接 lv_obj_delete 会让 root 悬空)
     void destroy_root()
     {
-        if(this->root != nullptr)
+        if(this->root_ != nullptr)
         {
-            lv_obj_delete(this->root);
-            this->root = nullptr;
+            lv_obj_delete(this->root_);
+            this->root_ = nullptr;
         }
     }
 private:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    PageQuit    quit_on_exit;   // 收场方式, 运行期可改 (set_quit_mode)
-    const char* page_name;      // 注册名 (字符串字面量, 常驻)
-    lv_obj_t*   root = nullptr; // 本页控件树根
+    PageQuit    quit_on_exit_;   // 收场方式, 运行期可改 (set_quit_mode)
+    const char* page_name_;      // 注册名 (字符串字面量, 常驻)
+    lv_obj_t*   root_ = nullptr; // 本页控件树根
 };
 } // namespace ui
 

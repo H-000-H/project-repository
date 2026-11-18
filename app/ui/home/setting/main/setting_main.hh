@@ -70,14 +70,14 @@ private:
     bool create_option_blue();
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    App&      app;                         /**< 组合根引用 */
-    lv_obj_t* scroll = nullptr;            /**< 滚动轴 (父节点是 root) */
-    lv_obj_t* option_net = nullptr;        /**< 网络选项 */
-    lv_obj_t* option_net_text = nullptr;   /**< 网络选项文字 */
-    lv_obj_t* option_power = nullptr;      /**< 电源选项 */
-    lv_obj_t* option_power_text = nullptr; /**< 电源选项文字 */
-    lv_obj_t* option_blue = nullptr;       /**< 蓝牙选项 */
-    lv_obj_t* option_blue_text = nullptr;  /**< 蓝牙选项文字 */
+    App&      app_;                         /**< 组合根引用 */
+    lv_obj_t* scroll_ = nullptr;            /**< 滚动轴 (父节点是 root) */
+    lv_obj_t* option_net_ = nullptr;        /**< 网络选项 */
+    lv_obj_t* option_net_text_ = nullptr;   /**< 网络选项文字 */
+    lv_obj_t* option_power_ = nullptr;      /**< 电源选项 */
+    lv_obj_t* option_power_text_ = nullptr; /**< 电源选项文字 */
+    lv_obj_t* option_blue_ = nullptr;       /**< 蓝牙选项 */
+    lv_obj_t* option_blue_text_ = nullptr;  /**< 蓝牙选项文字 */
 };
 } // namespace ui
 

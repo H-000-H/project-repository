@@ -31,7 +31,7 @@ constexpr std::uint32_t kReadTimeoutMs = 3000;
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 // 就绪握手是否已发出 (每轮 download_stream 重置一次, 见 ota_step)
-static bool s_ready_sent = false;
+static bool g_ready_sent = false;
 
 Ota& Ota::get_instance()
 {
@@ -102,9 +102,9 @@ static int ota_download_source(void* param, std::uint8_t* buf, std::uint32_t wan
 {
     ::device* dev = static_cast<::device*>(param);
 
-    if(!s_ready_sent)
+    if(!g_ready_sent)
     {
-        s_ready_sent = true;
+        g_ready_sent = true;
         /** 手动发送 READY 字节, 避免被 download_stream 的超时判死重来且路不和正常串口一条路*/
         static const std::uint8_t kReadyByte = 'R';
         (void)device_write(dev, &kReadyByte, 1u, 100u);
@@ -131,7 +131,7 @@ void Ota::ota_step()
     }
 
     MT_LOG_INFO(kTag, "ota download started");
-    s_ready_sent = false; // 每轮都会重新擦除, 所以要重新握手通知上位机
+    g_ready_sent = false; // 每轮都会重新擦除, 所以要重新握手通知上位机
     int ret = mini_boot_source_download_stream(ota_download_source, it.driver_, it.fw_total_len_);
     if(ret != ERR_OK)
     {

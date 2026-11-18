@@ -31,8 +31,8 @@ constexpr const char* kOtaCmdPrefix = "cmdota ";
 constexpr std::size_t kOtaCmdPrefixLen = 7u;
 
 // 行累积缓冲 (拆包/粘包都靠它兜住)
-char        s_line_buf[kLineMax];
-std::size_t s_line_len = 0u;
+char        g_line_buf[kLineMax];
+std::size_t g_line_len = 0u;
 
 /**
  * @brief 十进制解析: 只收纯数字
@@ -162,20 +162,20 @@ void Cmd::on_uart_rx(const std::uint8_t* data, std::size_t len)
 
         if((ch == '\n') || (ch == '\r')) // 帧结束 (CR/LF/CRLF 都收)
         {
-            if(s_line_len > 0u)
+            if(g_line_len > 0u)
             {
-                handle_line(s_line_buf, s_line_len);
-                s_line_len = 0u;
+                handle_line(g_line_buf, g_line_len);
+                g_line_len = 0u;
             }
             continue;
         }
 
-        if(s_line_len >= kLineMax) // 行过长: 丢弃整行并复位, 免得状态卡死
+        if(g_line_len >= kLineMax) // 行过长: 丢弃整行并复位, 免得状态卡死
         {
             MT_LOG_WARN(kTag, "line too long, dropped");
-            s_line_len = 0u;
+            g_line_len = 0u;
         }
-        s_line_buf[s_line_len++] = ch;
+        g_line_buf[g_line_len++] = ch;
     }
 }
 

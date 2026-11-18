@@ -26,14 +26,14 @@ bool LockPassword::set(const etl::string_view& text)
                      static_cast<unsigned>(kLockPasswordMaxLen));
         return false;
     }
-    this->pwd.assign(text.begin(), text.end());
+    this->pwd_.assign(text.begin(), text.end());
     return true;
 }
 
 bool LockPassword::match(const etl::string_view& text) const
 {
-    if(this->pwd.empty())
+    if(this->pwd_.empty())
         return false; /* 还没设过密码: 不放行 */
-    return (etl::string_view(this->pwd) == text);
+    return (etl::string_view(this->pwd_) == text);
 }
 } // namespace app

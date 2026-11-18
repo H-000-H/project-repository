@@ -30,20 +30,20 @@ bool App::init(lv_display_t* disp, InputBackend& input)
         MT_LOG_ERROR(kTag, "init: disp 为空, 拒绝 (不用默认屏兜底)");
         return false;
     }
-    this->disp = disp;
+    this->disp_ = disp;
 
     if(!this->set_input(input))
     {
         return false;
     }
-    if(!this->desktop.create(disp))
+    if(!this->desktop_.create(disp))
     {
         MT_LOG_ERROR(kTag, "desktop create failed");
         return false;
     }
     /* 桌面图标点击要跳页: Desktop 是 App 的成员, 构造期拿不到 App, 这里事后注入 */
-    this->desktop.bind_router(*this);
-    if(!this->top_bar.create(disp))
+    this->desktop_.bind_router(*this);
+    if(!this->top_bar_.create(disp))
     {
         MT_LOG_ERROR(kTag, "top bar create failed");
         return false;
@@ -53,24 +53,24 @@ bool App::init(lv_display_t* disp, InputBackend& input)
 
 bool App::set_input(InputBackend& input)
 {
-    if(this->disp == nullptr)
+    if(this->disp_ == nullptr)
     {
         MT_LOG_ERROR(kTag, "set_input: disp 还没设, 先 init");
         return false;
     }
-    if(this->input == &input)
+    if(this->input_ == &input)
     {
-        return input.attach(this->disp); /* 同一个后端重复调: attach 自己幂等 */
+        return input.attach(this->disp_); /* 同一个后端重复调: attach 自己幂等 */
     }
-    if(this->input != nullptr)
+    if(this->input_ != nullptr)
     {
-        this->input->detach(); /* 旧的先摘干净: 两个 indev 同时活在一块屏上会互相打架 */
+        this->input_->detach(); /* 旧的先摘干净: 两个 indev 同时活在一块屏上会互相打架 */
     }
 
-    this->input = &input;
-    if(!input.attach(this->disp))
+    this->input_ = &input;
+    if(!input.attach(this->disp_))
     {
-        this->input = nullptr;
+        this->input_ = nullptr;
         MT_LOG_ERROR(kTag, "input attach failed");
         return false;
     }
@@ -79,7 +79,7 @@ bool App::set_input(InputBackend& input)
 
 lv_group_t* App::get_group() const
 {
-    return (this->input != nullptr) ? this->input->group() : nullptr;
+    return (this->input_ != nullptr) ? this->input_->group() : nullptr;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -98,7 +98,7 @@ bool App::bind_page(Page& page)
     std::size_t free_slot = kNoSlot;
     for(std::size_t i = 0U; i < kPageSlotMax; ++i)
     {
-        Page* bound = this->table[i];
+        Page* bound = this->table_[i];
         if(bound == nullptr)
         {
             if(free_slot == kNoSlot)
@@ -124,7 +124,7 @@ bool App::bind_page(Page& page)
                      static_cast<unsigned>(kPageSlotMax), name);
         return false;
     }
-    this->table[free_slot] = &page;
+    this->table_[free_slot] = &page;
     MT_LOG_INFO(kTag, "page \"%s\" bound (quit=%s)", name,
                 (page.quit_mode() == PageQuit::HIDE) ? "hide" : "destroy");
     return true;
@@ -138,7 +138,7 @@ Page* App::page_of(const char* name) const
     }
     for(std::size_t i = 0U; i < kPageSlotMax; ++i)
     {
-        Page* bound = this->table[i];
+        Page* bound = this->table_[i];
         if((bound != nullptr) && (std::strcmp(bound->name(), name) == 0))
         {
             return bound;
@@ -159,7 +159,7 @@ bool App::show_page(const char* name)
         MT_LOG_ERROR(kTag, "show_page: \"%s\" 没注册", (name != nullptr) ? name : "(null)");
         return false;
     }
-    if(target == this->current)
+    if(target == this->current_)
     {
         return true; /* 重复进当前页: 忽略, 不算失败 */
     }
@@ -168,7 +168,7 @@ bool App::show_page(const char* name)
 
 bool App::back()
 {
-    if(this->current == nullptr)
+    if(this->current_ == nullptr)
     {
         return false; /* 本来就没页面, 回无可回 */
     }
@@ -188,13 +188,13 @@ bool App::reset_to(const char* name)
 
 bool App::push_route(RouteOp op, Page* target)
 {
-    if(this->pending.op != RouteOp::NONE)
+    if(this->pending_.op_ != RouteOp::NONE)
     {
         MT_LOG_WARN(kTag, "route override: 待执行的请求被顶掉, target=\"%s\"",
-                    (this->pending.target != nullptr) ? this->pending.target->name() : "(back)");
+                    (this->pending_.target_ != nullptr) ? this->pending_.target_->name() : "(back)");
     }
-    this->pending.op = op;
-    this->pending.target = target;
+    this->pending_.op_ = op;
+    this->pending_.target_ = target;
     return true;
 }
 
@@ -207,7 +207,7 @@ void App::tick()
     /* 先执行攒下的换页请求: 它们来自上一帧的事件回调/enter/exit, 那时删控件树不安全 */
     this->flush_route();
 
-    Page* page = this->current;
+    Page* page = this->current_;
     if(page == nullptr)
     {
         return;
@@ -226,19 +226,19 @@ void App::tick()
 
 void App::flush_route()
 {
-    for(std::size_t hop = 0U; this->pending.op != RouteOp::NONE; ++hop)
+    for(std::size_t hop = 0U; this->pending_.op_ != RouteOp::NONE; ++hop)
     {
         if(hop >= kRouteChainMax)
         {
             MT_LOG_ERROR(kTag, "route chain over %u hops, pending dropped (页面在 enter/exit 里互相跳?)",
                          static_cast<unsigned>(kRouteChainMax));
-            this->pending = RouteRequest{};
+            this->pending_ = RouteRequest{};
             return;
         }
 
-        const RouteRequest req = this->pending;
-        this->pending = RouteRequest{}; /* 先清再执行: 执行期间新提的请求才不会被就地吃掉 */
-        this->apply_route(req.op, req.target);
+        const RouteRequest req = this->pending_;
+        this->pending_ = RouteRequest{}; /* 先清再执行: 执行期间新提的请求才不会被就地吃掉 */
+        this->apply_route(req.op_, req.target_);
     }
 }
 
@@ -264,22 +264,22 @@ void App::close_page(Page* page)
 
 void App::close_current()
 {
-    Page* old = this->current;
+    Page* old = this->current_;
     if(old == nullptr)
     {
         return;
     }
 
     /* 先摘再收场: 页面在 hide/exit 里再发起换页也不会撞到自己 */
-    this->current = nullptr;
+    this->current_ = nullptr;
     close_page(old);
 }
 
 std::size_t App::stack_index_of(const Page* target) const
 {
-    for(std::size_t i = 0U; i < this->stack.size(); ++i)
+    for(std::size_t i = 0U; i < this->stack_.size(); ++i)
     {
-        if(this->stack[i] == target)
+        if(this->stack_[i] == target)
         {
             return i;
         }
@@ -291,24 +291,24 @@ bool App::apply_route(RouteOp op, Page* target)
 {
     if(op == RouteOp::BACK)
     {
-        Page* const gone = this->current;
+        Page* const gone = this->current_;
         this->close_current();
 
-        if((!this->stack.empty()) && (this->stack.back() == gone))
+        if((!this->stack_.empty()) && (this->stack_.back() == gone))
         {
-            this->stack.pop_back(); /* 弹掉自己 */
+            this->stack_.pop_back(); /* 弹掉自己 */
         }
 
-        if(this->stack.empty())
+        if(this->stack_.empty())
         {
             MT_LOG_INFO(kTag, "stack empty, back to shell only");
             return true;
         }
 
-        Page* page = this->stack.back();
-        this->current = page;
-        page->enter(this->desktop.get_screen());
-        MT_LOG_INFO(kTag, "back to \"%s\" (depth=%u)", page->name(), static_cast<unsigned>(this->stack.size()));
+        Page* page = this->stack_.back();
+        this->current_ = page;
+        page->enter(this->desktop_.get_screen());
+        MT_LOG_INFO(kTag, "back to \"%s\" (depth=%u)", page->name(), static_cast<unsigned>(this->stack_.size()));
         return true;
     }
 
@@ -322,13 +322,13 @@ bool App::apply_route(RouteOp op, Page* target)
        弹栈/清栈清的是"导航历史", 不是控件树 */
     if(op == RouteOp::RESET)
     {
-        for(std::size_t i = this->stack.size(); i > 0U; --i)
+        for(std::size_t i = this->stack_.size(); i > 0U; --i)
         {
-            if(this->stack[i - 1U] != target && this->stack[i - 1U] != this->current)
+            if(this->stack_[i - 1U] != target && this->stack_[i - 1U] != this->current_)
             {
-                close_page(this->stack[i - 1U]);
+                close_page(this->stack_[i - 1U]);
             }
-            this->stack.pop_back();
+            this->stack_.pop_back();
         }
     }
     else
@@ -337,16 +337,16 @@ bool App::apply_route(RouteOp op, Page* target)
         const std::size_t found = this->stack_index_of(target);
         if(found != kNoSlot)
         {
-            for(std::size_t i = this->stack.size(); i > (found + 1U); --i)
+            for(std::size_t i = this->stack_.size(); i > (found + 1U); --i)
             {
-                if(this->stack[i - 1U] != this->current)
+                if(this->stack_[i - 1U] != this->current_)
                 {
-                    close_page(this->stack[i - 1U]);
+                    close_page(this->stack_[i - 1U]);
                 }
-                this->stack.pop_back();
+                this->stack_.pop_back();
             }
         }
-        else if(this->stack.full())
+        else if(this->stack_.full())
         {
             MT_LOG_ERROR(kTag, "stack full (%u), show_page \"%s\" rejected",
                          static_cast<unsigned>(kStackDepth), target->name());
@@ -354,20 +354,20 @@ bool App::apply_route(RouteOp op, Page* target)
         }
     }
 
-    if(this->current != target)
+    if(this->current_ != target)
     {
         this->close_current();
     }
 
-    if(this->stack.empty() || (this->stack.back() != target))
+    if(this->stack_.empty() || (this->stack_.back() != target))
     {
-        this->stack.push_back(target); /* 满了上面已挡掉, 这里不会越界 */
+        this->stack_.push_back(target); /* 满了上面已挡掉, 这里不会越界 */
     }
 
-    this->current = target;
-    target->enter(this->desktop.get_screen());
+    this->current_ = target;
+    target->enter(this->desktop_.get_screen());
     MT_LOG_INFO(kTag, "page \"%s\" in, op=%s depth=%u", target->name(),
-                (op == RouteOp::RESET) ? "reset" : "show", static_cast<unsigned>(this->stack.size()));
+                (op == RouteOp::RESET) ? "reset" : "show", static_cast<unsigned>(this->stack_.size()));
     return true;
 }
 

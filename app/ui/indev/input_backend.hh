@@ -159,7 +159,7 @@ public:
     {
         const std::uint8_t idx = static_cast<std::uint8_t>(event) - 1U;
         if((key == 0U) || (idx >= kEventNum) ||
-           (MINI_ATOMIC_LOAD(&this->data_.event_num[idx], MINI_RELAXED) >= kEventKeyMax))
+           (MINI_ATOMIC_LOAD(&this->data_.event_num_[idx], MINI_RELAXED) >= kEventKeyMax))
         {
             return false;
         }
@@ -173,9 +173,9 @@ public:
         }
 
         /* 写者只有 UI 线程: 先写数据, 再 release 发布条数 */
-        const std::uint8_t num = MINI_ATOMIC_LOAD(&this->data_.event_num[idx], MINI_RELAXED);
-        this->data_.event[idx][num] = key;
-        MINI_ATOMIC_STORE(&this->data_.event_num[idx], static_cast<std::uint8_t>(num + 1U), MINI_RELEASE);
+        const std::uint8_t num = MINI_ATOMIC_LOAD(&this->data_.event_num_[idx], MINI_RELAXED);
+        this->data_.event_[idx][num] = key;
+        MINI_ATOMIC_STORE(&this->data_.event_num_[idx], static_cast<std::uint8_t>(num + 1U), MINI_RELEASE);
         return true;
     }
 
@@ -184,7 +184,7 @@ public:
     {
         for(std::uint8_t i = 0U; i < kEventNum; ++i)
         {
-            MINI_ATOMIC_STORE(&this->data_.event_num[i], 0U, MINI_RELEASE);
+            MINI_ATOMIC_STORE(&this->data_.event_num_[i], 0U, MINI_RELEASE);
         }
     }
 
@@ -241,14 +241,14 @@ private:
     struct BridgeData
     {
         /* 事件 → 键值序列: 一个事件可绑多个键, 触发后按绑定顺序逐个入队 */
-        lv_key_t event[kEventNum][kEventKeyMax] = {};
+        lv_key_t event_[kEventNum][kEventKeyMax] = {};
         /* 条数跨线程发布用: 先写数据, 再 release 发布条数 */
-        MINI_ATOMIC_UINT8 event_num[kEventNum] = {};
+        MINI_ATOMIC_UINT8 event_num_[kEventNum] = {};
 
         /* fifo_spsc 内部是 uintptr_t, 32/64 位平台都能正确存 lv_key_t */
-        struct fifo_spsc queue = {};
-        fifo_data_type   queue_buf[kQueueLen] = {};
-        std::uint16_t    drop = 0U; /**< 队列满被丢的键数 */
+        struct fifo_spsc queue_ = {};
+        fifo_data_type   queue_buf_[kQueueLen] = {};
+        std::uint16_t    drop_ = 0U; /**< 队列满被丢的键数 */
     };
 
     /** @brief 本颗按键: 把按键库事件翻译成 LVGL 键值入队 (只依赖 BridgeData) */
@@ -281,13 +281,13 @@ private:
             }
 
             /* acquire 读条数 → 保证读到 num 时前 num 条数据已写完 (UI 线程正在写绑定表) */
-            const std::uint8_t num = MINI_ATOMIC_LOAD(&data.event_num[idx], MINI_ACQUIRE);
+            const std::uint8_t num = MINI_ATOMIC_LOAD(&data.event_num_[idx], MINI_ACQUIRE);
             for(std::uint8_t i = 0U; i < num; ++i)
             {
-                const fifo_data_type key = static_cast<fifo_data_type>(data.event[idx][i]);
-                if(fifo_write_data(&data.queue, key) != BUFF_OK)
+                const fifo_data_type key = static_cast<fifo_data_type>(data.event_[idx][i]);
+                if(fifo_write_data(&data.queue_, key) != BUFF_OK)
                 {
-                    ++data.drop; /* 满: 丢最新那个, 已入队的按顺序保留 */
+                    ++data.drop_; /* 满: 丢最新那个, 已入队的按顺序保留 */
                     break;
                 }
             }
@@ -329,13 +329,13 @@ private:
             data.state = LV_INDEV_STATE_RELEASED;
             /* 队列里还有键 → 让 LVGL 在同一个周期里接着读下一个 */
             bool empty = true;
-            MINI_IGNORE_RESULT(fifo_isempty(&this->data_.queue, &empty));
+            MINI_IGNORE_RESULT(fifo_isempty(&this->data_.queue_, &empty));
             data.continue_reading = !empty;
             return true;
         }
 
         fifo_data_type key = 0;
-        if(fifo_read_data(&this->data_.queue, &key) != BUFF_OK)
+        if(fifo_read_data(&this->data_.queue_, &key) != BUFF_OK)
         {
             return false; /* 队列空 */
         }
@@ -355,7 +355,7 @@ private:
     bool has_bind(button::Button_Event event) const
     {
         const std::uint8_t i = static_cast<std::uint8_t>(event) - 1U;
-        return (i < kEventNum) && (MINI_ATOMIC_LOAD(&this->data_.event_num[i], MINI_RELAXED) != 0U);
+        return (i < kEventNum) && (MINI_ATOMIC_LOAD(&this->data_.event_num_[i], MINI_RELAXED) != 0U);
     }
 
     /** @brief 是否已绑了任一结算类短按事件 */

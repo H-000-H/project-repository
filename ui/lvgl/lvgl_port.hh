@@ -126,7 +126,7 @@ public:
         const std::uint32_t slice = SliceBytes();
         if(slice == 0U)
         {
-            MINI_IGNORE_RESULT(device_close(this->device_ptr));
+            MINI_IGNORE_RESULT(device_close(this->device_ptr_));
             return MINI_ERR_NOTSUPP;
         }
         flush_buffer_size_ = slice;
@@ -141,7 +141,7 @@ public:
         if(disp == nullptr)
         {
             MT_LOG_ERROR(kTag, "lv_display_create failed (LV_MEM_SIZE 不够?)");
-            MINI_IGNORE_RESULT(device_close(this->device_ptr));
+            MINI_IGNORE_RESULT(device_close(this->device_ptr_));
             return MINI_ERR_NOMEM;
         }
 
@@ -219,8 +219,8 @@ public:
 
         this->arg_ = DeviceArg{};
         /* 屏内坐标 → 面板绝对坐标 */
-        this->arg_.x = static_cast<int16_t>(this->x_start + area->x1);
-        this->arg_.y = static_cast<int16_t>(this->y_start + area->y1);
+        this->arg_.x = static_cast<int16_t>(this->x_start_ + area->x1);
+        this->arg_.y = static_cast<int16_t>(this->y_start_ + area->y1);
         this->arg_.w = static_cast<int16_t>(area->x2 - area->x1 + 1);
         this->arg_.h = static_cast<int16_t>(area->y2 - area->y1 + 1);
         this->arg_.format = kDriverFormat;
@@ -264,17 +264,17 @@ private:
     // 开设备 + 向驱动要窗口 (只给 Init 用, 免得出现"开了但没建屏"的半状态)
     int Open()
     {
-        if(opened)
+        if(opened_)
         {
             return MINI_OK;
         }
-        if(this->device_ptr == nullptr)
+        if(this->device_ptr_ == nullptr)
         {
             MT_LOG_ERROR(kTag, "panel device is null (label 没查到, 构造时已报过)");
             return MINI_ERR_INVAL;
         }
 
-        int ret = device_open(this->device_ptr, nullptr);
+        int ret = device_open(this->device_ptr_, nullptr);
         if(ret != MINI_OK)
         {
             MT_LOG_ERROR(kTag, "panel open failed: %d", ret);
@@ -282,11 +282,11 @@ private:
         }
 
         struct display_info_arg info = {0};
-        ret = device_ioctl(this->device_ptr, DISPLAY_CMD_GET_INFO, &info, sizeof(info), 0);
+        ret = device_ioctl(this->device_ptr_, DISPLAY_CMD_GET_INFO, &info, sizeof(info), 0);
         if(ret != MINI_OK)
         {
             MT_LOG_ERROR(kTag, "GET_INFO failed: %d", ret);
-            MINI_IGNORE_RESULT(device_close(this->device_ptr));
+            MINI_IGNORE_RESULT(device_close(this->device_ptr_));
             return ret;
         }
         if((info.format != kDriverFormat) || (info.width == 0U) || (info.height == 0U))
@@ -294,7 +294,7 @@ private:
             MT_LOG_ERROR(kTag, "panel not usable: fmt=%u %ux%u (port fmt=%u)", static_cast<unsigned>(info.format),
                          static_cast<unsigned>(info.width), static_cast<unsigned>(info.height),
                          static_cast<unsigned>(kDriverFormat));
-            MINI_IGNORE_RESULT(device_close(this->device_ptr));
+            MINI_IGNORE_RESULT(device_close(this->device_ptr_));
             return MINI_ERR_NOTSUPP;
         }
 
@@ -302,11 +302,11 @@ private:
         if(!this->SetWindow(0U, 0U, static_cast<std::uint16_t>(info.width - 1U),
                             static_cast<std::uint16_t>(info.height - 1U)))
         {
-            MINI_IGNORE_RESULT(device_close(this->device_ptr));
+            MINI_IGNORE_RESULT(device_close(this->device_ptr_));
             return MINI_ERR_INVAL;
         }
 
-        opened = true;
+        opened_ = true;
         MT_LOG_INFO(kTag, "id=%u panel %ux%u opened", static_cast<unsigned>(id), static_cast<unsigned>(this->Width()),
                     static_cast<unsigned>(this->Height()));
         return MINI_OK;
@@ -357,7 +357,7 @@ private:
     std::uint32_t                                               flush_buffer_size_ = 0U; // 单帧长度, Init 里算
     etl::array<std::uint8_t, buffer_bytes>                      flush_buffer_{};         // 绘制缓冲
     etl::array<std::uint8_t, double_buffer ? buffer_bytes : 1U> secondary_{};            // 第二块(双缓冲才参与)
-    bool                                                        opened = false;          // 是否已 open 并拿到窗口
+    bool                                                        opened_ = false;         // 是否已 open 并拿到窗口
 };
 } // namespace ui
 

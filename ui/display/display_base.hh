@@ -45,9 +45,9 @@ public:
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     // 只绑定 device, 窗口先留空由 SetWindow 填 (label 查不到时 device_ptr 为 nullptr)
-    explicit DisplayBase(const char* device_label) : device_ptr((device_label != nullptr) ? device_find_by_label(device_label) : nullptr)
+    explicit DisplayBase(const char* device_label) : device_ptr_((device_label != nullptr) ? device_find_by_label(device_label) : nullptr)
     {
-        if(device_ptr == nullptr)
+        if(device_ptr_ == nullptr)
         {
             MT_LOG_ERROR(kTag, "device \"%s\" not found", (device_label != nullptr) ? device_label : "(null)");
         }
@@ -86,20 +86,20 @@ public:
             return false;
         }
 
-        x_start = x1;
-        y_start = y1;
-        x_end = x2;
-        y_end = y2;
+        x_start_ = x1;
+        y_start_ = y1;
+        x_end_ = x2;
+        y_end_ = y2;
         return true;
     }
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     // 窗口宽
-    std::uint16_t Width() const { return static_cast<std::uint16_t>(x_end - x_start + 1U); }
+    std::uint16_t Width() const { return static_cast<std::uint16_t>(x_end_ - x_start_ + 1U); }
 
     // 窗口高
-    std::uint16_t Height() const { return static_cast<std::uint16_t>(y_end - y_start + 1U); }
+    std::uint16_t Height() const { return static_cast<std::uint16_t>(y_end_ - y_start_ + 1U); }
 
     // 整屏字节数 (位宽 < 8 时向上取整)
     std::size_t CapacityBytes() const
@@ -117,20 +117,20 @@ protected:
             MT_LOG_ERROR(kTag, "flush: empty callback");
             return MINI_ERR_INVAL;
         }
-        cb = callback; /* 留一份当前实现(重刷/诊断用) */
-        return cb(device_ptr, arg, flush_timeout);
+        cb_ = callback; /* 留一份当前实现(重刷/诊断用) */
+        return cb_(device_ptr_, arg, flush_timeout_);
     }
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
-    DeviceArg     arg_{};       // 本屏 ioctl 入参, 每帧被派生类重填
-    FlushCallback cb;           // 留一份当前刷屏实现
-    std::uint16_t x_start = 0U; // 窗口(闭区间, 面板绝对坐标)
-    std::uint16_t y_start = 0U;
-    std::uint16_t x_end = 0U;
-    std::uint16_t y_end = 0U;
-    ::device*     device_ptr = nullptr; // 面板 device
-    std::uint32_t flush_timeout = 0U;   // 刷新超时 ms (0 = 驱动默认)
+    DeviceArg     arg_{};        // 本屏 ioctl 入参, 每帧被派生类重填
+    FlushCallback cb_;           // 留一份当前刷屏实现
+    std::uint16_t x_start_ = 0U; // 窗口(闭区间, 面板绝对坐标)
+    std::uint16_t y_start_ = 0U;
+    std::uint16_t x_end_ = 0U;
+    std::uint16_t y_end_ = 0U;
+    ::device*     device_ptr_ = nullptr; // 面板 device
+    std::uint32_t flush_timeout_ = 0U;   // 刷新超时 ms (0 = 驱动默认)
 };
 } // namespace ui
 

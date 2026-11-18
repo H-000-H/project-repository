@@ -102,15 +102,15 @@ public:
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 // 钩子默认全空: 没注入时本任务只驱动板载自己那颗按键 (button1)
-Button::HookFn Button::s_open = nullptr;
-Button::HookFn Button::s_sample = nullptr;
-void*          Button::s_ctx = nullptr;
+Button::HookFn Button::s_open_ = nullptr;
+Button::HookFn Button::s_sample_ = nullptr;
+void*          Button::s_ctx_ = nullptr;
 
 void Button::set_sample_hook(HookFn open, HookFn sample, void* ctx)
 {
-    s_open = open;
-    s_sample = sample;
-    s_ctx = ctx;
+    s_open_ = open;
+    s_sample_ = sample;
+    s_ctx_ = ctx;
 }
 
 // 按键扫描任务体: 先采上层那颗按键(如 button2), 再采本模块的 button1, 最后统一推进状态机
@@ -118,18 +118,18 @@ void Button::thread(void* param)
 {
     (void)param;
 
-    if(s_open != nullptr)
+    if(s_open_ != nullptr)
     {
-        s_open(s_ctx);
+        s_open_(s_ctx_);
     }
 
     auto& button1 = AppButton1::get_instance();
     button1.register_callback();
     for(;;)
     {
-        if(s_sample != nullptr)
+        if(s_sample_ != nullptr)
         {
-            s_sample(s_ctx);
+            s_sample_(s_ctx_);
         }
         button1.sample_level();
         button::Button::scan();
