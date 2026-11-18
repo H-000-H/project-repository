@@ -68,9 +68,9 @@
 	status = "okay";
 };
 
-/* 按键1: PA6 — 内部上拉, 按下为低电平 (与 app_button.cpp 的 pressed_level=0 配套)
+/* 按键1: PA6 — 内部上拉, 按下为低电平 (与 app_button.cc 的 pressed_level=0 配套)
  * 按键2: PA7 — 内部上拉, 按下为低电平 (pressed_level=0)
- * @note 引脚按实际硬件改; 换引脚只需改这里 + app_button.cpp 两处实例的有效电平 */
+ * @note 引脚按实际硬件改; 换引脚只需改这里 + app_button.cc 两处实例的有效电平 */
 &button1 {
 	gpio-port = <GPIOA_BASE>;
 	gpio-pin = <LL_GPIO_PIN_6>;

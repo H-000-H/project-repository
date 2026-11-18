@@ -20,8 +20,8 @@ set(CONFIG_LV_USE_THORVG_INTERNAL OFF CACHE BOOL "" FORCE)
 add_subdirectory(${ROOT}/mini_tree/lib/lvgl ${CMAKE_BINARY_DIR}/lvgl)
 
 # 目标: 只要 app/ui 与 ui 两层 (+ app/secure 的常驻数据 + 可移植的 fifo 实现 + PC 适配桩)
-file(GLOB_RECURSE UI_SRCS ${ROOT}/app/ui/*.cpp ${ROOT}/app/ui/*.c ${ROOT}/ui/*.cpp
-                           ${ROOT}/app/secure/*/*.cpp)
+file(GLOB_RECURSE UI_SRCS ${ROOT}/app/ui/*.cc ${ROOT}/app/ui/*.c ${ROOT}/ui/*.cc
+                           ${ROOT}/app/secure/*/*.cc)
 file(GLOB BUF_SRCS ${ROOT}/mini_tree/algorithm/buffer/*.c)
 # app/ui 下所有子目录都进 include: 新增页面目录不用回来改本文件
 # (GLOB 会把同层文件如 .clangd 也列进来 → 只保留目录)
@@ -48,14 +48,14 @@ else()
     set(UI_LIB SHARED)
 endif()
 
-add_library(ui_logic ${UI_LIB} ${UI_SRCS} ${BUF_SRCS} pc_port.cpp pc_display.cpp pc_input.cpp)
+add_library(ui_logic ${UI_LIB} ${UI_SRCS} ${BUF_SRCS} pc_port.cc pc_display.cc pc_input.cc)
 
 # PC 侧给 LVGL 一个大内存池: 320x240 底图的 layer/缓存远超 MCU 的 16KB,
 # 池不够会分配失败返回空指针, LVGL 往里写就越界崩溃 (MCU 侧不覆盖, 保持 16KB)
 target_compile_definitions(ui_logic PUBLIC LV_MEM_SIZE=8388608)  # 8MB, 别写成表达式: -D 里的括号会被命令行吃掉
 target_compile_definitions(lvgl PRIVATE LV_MEM_SIZE=8388608)
 
-add_executable(ui_host host_main.cpp)
+add_executable(ui_host host_main.cc)
 target_link_libraries(ui_host PRIVATE ui_logic lvgl)
 
 target_include_directories(ui_logic PUBLIC

@@ -20,9 +20,9 @@ set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_C_COMPILER arm-none-eabi-gcc) # 或者你的具体交叉编译器
-set(CMAKE_CXX_COMPILER arm-none-eabi-g++) # 或者你的具体交叉编译器
-    
+set(CMAKE_C_COMPILER arm-none-eabi-gcc) 
+set(CMAKE_CXX_COMPILER arm-none-eabi-g++)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -52,7 +52,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Core project settings
-project(${CMAKE_PROJECT_NAME})
+project(${CMAKE_PROJECT_NAME} LANGUAGES CXX C ASM)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -125,16 +125,16 @@ else()
     target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${PLATFORM_HAL_SRCS}
         ota-stm32f4/flash_stm32f4.c
         ota-stm32f4/flash_stm32f4.h
-        app/ota/app_ota.cpp
-        app/ota/app_ota.hpp
-        app/communicate/base/app_communicate_base.cpp
-        app/communicate/base/app_communicate_base.hpp
-        app/cmd/uart/app_uart_cmd.cpp
-        app/cmd/uart/app_uart_cmd.hpp
-        app/button/app_button.cpp
-        app/button/app_button.hpp
-        app/button/lib/button.hpp
-        ui/display/display_base.hpp)
+        app/ota/app_ota.cc
+        app/ota/app_ota.hh
+        app/communicate/base/app_communicate_base.cc
+        app/communicate/base/app_communicate_base.hh
+        app/cmd/uart/app_uart_cmd.cc
+        app/cmd/uart/app_uart_cmd.hh
+        app/button/app_button.cc
+        app/button/app_button.hh
+        app/button/lib/button.hh
+        ui/display/display_base.hh)
 
     target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/hal"
@@ -208,35 +208,37 @@ if(NOT BOOT_BUILD AND UI_LVGL)
     include("${CMAKE_CURRENT_SOURCE_DIR}/mini_tree/cmake/lvgl.cmake")
 
     # LVGL 自带的 ThorVG 与本板无关 (lv_conf.h: LV_USE_THORVG=0)，但它的 cmake 选项
-    # 默认 ON，会把 vendored 的 47 个 .cpp 一起编进来 → 显式关掉。
+    # 默认 ON，会把 vendored 的 47 个 .cpp (ThorVG 自身源码, 未改名) 一起编进来 → 显式关掉。
     set(CONFIG_LV_USE_THORVG OFF CACHE BOOL "LVGL ThorVG (MCU 不用)" FORCE)
 
     # ui/ 下源码用 glob 收: CONFIGURE_DEPENDS 让新增/删除文件在下次构建时自动重配,
     # 重写 UI 期间不用回来改本文件。头文件一并列出, 只作 IDE 展示, 编译由 include 路径决定。
     file(GLOB_RECURSE UI_SRCS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.hpp")
+        "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.hh")
     target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${UI_SRCS}
-        # app/ui/main/ui_task.cpp 在 cmake/stm32/CMakeLists.txt 的 STM32_APP_SRCS 里, 此处不重复列
-        app/ui/main/ui_app.cpp
-        app/ui/global/dektop/desktop.cpp
+        # app/ui/main/ui_task.cc 在 cmake/stm32/CMakeLists.txt 的 STM32_APP_SRCS 里, 此处不重复列
+        app/ui/main/ui_app.cc
+        app/ui/global/dektop/desktop.cc
         app/ui/global/dektop/desktop_320x240.c
-        app/ui/global/top-bar/top_bar.cpp
-        app/ui/home/lock/lock_screen.cpp
-        app/ui/home/setting/base/setting_base.cpp
-        app/ui/home/setting/base/setting_base.hpp
-        app/ui/home/setting/main/setting_main.cpp
-        app/secure/lock-password/lock-password.cpp
-        app/ui/main/page.hpp
-        app/ui/main/ui_app.hpp
-        app/ui/indev/input_backend.hpp
-        app/ui/home/home.hpp
-        app/ui/global/dektop/desktop.hpp
-        app/ui/global/top-bar/top_bar.hpp
-        app/ui/home/lock/lock_screen.hpp
-        app/ui/home/setting/main/setting_main.hpp)
+        app/ui/global/top-bar/top_bar.cc
+        app/ui/home/lock/lock_screen.cc
+        app/ui/home/setting/base/setting_base.cc
+        app/ui/home/setting/base/setting_base.hh
+        app/ui/home/setting/main/setting_main.cc
+        app/secure/lock-password/lock-password.cc
+        app/ui/main/page.hh
+        app/ui/common/page_layout.cc
+        app/ui/common/page_layout.hh
+        app/ui/main/ui_app.hh
+        app/ui/indev/input_backend.hh
+        app/ui/home/home.hh
+        app/ui/global/dektop/desktop.hh
+        app/ui/global/top-bar/top_bar.hh
+        app/ui/home/lock/lock_screen.hh
+        app/ui/home/setting/main/setting_main.hh)
 
     # ui/ 本身 + 每个子目录都进 include 路径 (桥接头/port 头在代码里都是裸名 include),
     # 重写时新增子目录也不用改本文件。
@@ -246,8 +248,8 @@ if(NOT BOOT_BUILD AND UI_LVGL)
     # 否则文件会被当 -I 送进编译器 (cc1: warning: <path>: not a directory)。
     file(GLOB UI_INC_DIRS LIST_DIRECTORIES true CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/ui/*")
-    # app/ui 下页面子目录也进 include (home.hpp 等被跨目录裸名 include);
-    # 每深一层加一条 glob: ui_screen.hpp 引 setting_main.hpp, 而它在 home/setting/main/,
+    # app/ui 下页面子目录也进 include (home.hh 等被跨目录裸名 include);
+    # 每深一层加一条 glob: ui_screen.hh 引 setting_main.hh, 而它在 home/setting/main/,
     # 与 ui_pc/CMakeLists.txt 的 _APP_UI_DIRS_RAW 保持同一套发现规则
     file(GLOB APP_UI_INC_DIRS LIST_DIRECTORIES true CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/*"

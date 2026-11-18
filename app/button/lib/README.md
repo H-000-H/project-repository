@@ -16,7 +16,7 @@ A generic C++ button library for embedded systems. Supports debounce, single/dou
 ## Quick Start
 
 ```cpp
-#include "button.hpp"
+#include "button.hh"
 
 // Create button objects (auto-registered)
 static button::Button btn1;
@@ -54,7 +54,7 @@ int main()
 
 `button::get_tick()` is **already implemented in the library** — it returns `mini_os_get_tick()`. You do not need to define it yourself; defining it again in the same translation unit is a redefinition error.
 
-If your project must source the tick elsewhere, edit the definition at the bottom of `button.hpp` instead of adding a second one.
+If your project must source the tick elsewhere, edit the definition at the bottom of `button.hh` instead of adding a second one.
 
 ### ETL Delegate Mode
 

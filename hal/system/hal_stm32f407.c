@@ -95,14 +95,14 @@ void hal_platform_nmi_emergency_stamp(void)
 /* ---- 复位向量 SystemInit — 替代 Cube 生成的 system_stm32f4xx.c (Core/ 已移除) ---- */
 
 /**
- * @brief 系统时钟变量 (newlib/HAL 引用) — 默认 HSI 16MHz, 由 main.cpp
+ * @brief 系统时钟变量 (newlib/HAL 引用) — 默认 HSI 16MHz, 由 main.cc
  *        SystemClock_Config 完成后更新为实际值 (96MHz)
  */
 uint32_t SystemCoreClock = 16000000U;
 
 /**
  * @brief 复位向量入口 (startup_stm32f407xx.s 调用)
- * @note 仅做 FPU 使能 + 默认时钟变量; 完整时钟配置在 main.cpp 的
+ * @note 仅做 FPU 使能 + 默认时钟变量; 完整时钟配置在 main.cc 的
  *       SystemClock_Config (HAL_RCC) 完成
  */
 void SystemInit(void)

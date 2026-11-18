@@ -36,23 +36,23 @@ set(STM32_INCLUDE_DIRS
     "${STM32_ROOT}/Drivers/CMSIS/Include"
 )
 
-# 入口源按目标切换: boot 编 main_boot.cpp(bootloader 引导仲裁), app 编 main_app.cpp
-# main_common.cpp(SystemClock_Config/Error_Handler) 为两个固件共用
+# 入口源按目标切换: boot 编 main_boot.cc(bootloader 引导仲裁), app 编 main_app.cc
+# main_common.cc(SystemClock_Config/Error_Handler) 为两个固件共用
 if(BOOT_BUILD)
     set(STM32_APP_SRCS
-        "${STM32_ROOT}/main/main_boot.cpp"
-        "${STM32_ROOT}/main/main_common.cpp"
+        "${STM32_ROOT}/main/main_boot.cc"
+        "${STM32_ROOT}/main/main_common.cc"
         "${STM32_ROOT}/startup_stm32f407xx.s"
     )
 else()
     set(STM32_APP_SRCS
-        "${STM32_ROOT}/main/main_app.cpp"
-        "${STM32_ROOT}/main/main_common.cpp"
+        "${STM32_ROOT}/main/main_app.cc"
+        "${STM32_ROOT}/main/main_common.cc"
         "${STM32_ROOT}/startup_stm32f407xx.s"
-        "${STM32_ROOT}/app/led/app_led.cpp"
-        "${STM32_ROOT}/app/communicate/base/app_communicate_base.cpp"
-        "${STM32_ROOT}/app/communicate/uart/app_uart_recv.cpp"
-        "${STM32_ROOT}/app/ui/main/ui_task.cpp"
+        "${STM32_ROOT}/app/led/app_led.cc"
+        "${STM32_ROOT}/app/communicate/base/app_communicate_base.cc"
+        "${STM32_ROOT}/app/communicate/uart/app_uart_recv.cc"
+        "${STM32_ROOT}/app/ui/main/ui_task.cc"
     )
 endif()
 

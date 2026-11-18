@@ -1,6 +1,6 @@
 /*
  * PC 侧的"面板": 一个 Win32 窗口 + 离屏 DIB, 代替嵌入式那边的 st7789 驱动。
- * UI 层照旧走 DISPLAY_CMD_GET_INFO / DISPLAY_CMD_FLUSH, 由 pc_port.cpp 转发到这里。
+ * UI 层照旧走 DISPLAY_CMD_GET_INFO / DISPLAY_CMD_FLUSH, 由 pc_port.cc 转发到这里。
  */
 #ifndef PC_DISPLAY_H
 #define PC_DISPLAY_H

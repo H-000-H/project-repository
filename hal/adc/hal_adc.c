@@ -408,11 +408,11 @@ int hal_adc_dma_start(hal_adc_device *pdev)
      fifo_init(&pdev->host->private_cfg->dma_buffer_handle, pdev->host->private_cfg->dma_data_buf, DMA_BUFFER_SIZE);
 
      /**< 一次性绑定全局下半部 work (fn/arg/原子位) — 全局变量由 interrupt.c 定义 */
-     g_adc_dma_bottom_half_work.fn  = hal_adc_dma_bottom_half_handler;
-     g_adc_dma_bottom_half_work.arg = pdev;
-     MINI_ATOMIC_STORE(&g_adc_dma_bottom_half_work.pending,   false, MINI_SEQ_CST);
-     MINI_ATOMIC_STORE(&g_adc_dma_bottom_half_work.executing, false, MINI_SEQ_CST);
-     MINI_ATOMIC_STORE(&g_adc_dma_bottom_half_work.rerun,     false, MINI_SEQ_CST);
+     adc_dma_bottom_half_work.fn  = hal_adc_dma_bottom_half_handler;
+     adc_dma_bottom_half_work.arg = pdev;
+     MINI_ATOMIC_STORE(&adc_dma_bottom_half_work.pending,   false, MINI_SEQ_CST);
+     MINI_ATOMIC_STORE(&adc_dma_bottom_half_work.executing, false, MINI_SEQ_CST);
+     MINI_ATOMIC_STORE(&adc_dma_bottom_half_work.rerun,     false, MINI_SEQ_CST);
 
      LL_DMA_EnableStream(dma, stream);
      LL_DMA_EnableIT_TC(dma, stream);

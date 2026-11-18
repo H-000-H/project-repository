@@ -114,11 +114,11 @@ static void i2s_dma_apply_irq_mode(DMA_TypeDef* dma, uint32_t stream, uint32_t i
  */
 static void i2s_bind_bottom_half(struct hal_i2s_dev* pdev)
 {
-    g_i2s_bottom_half_work.fn  = hal_i2s_dma_bottom_half_handler;
-    g_i2s_bottom_half_work.arg = pdev;
-    MINI_ATOMIC_STORE(&g_i2s_bottom_half_work.pending,   false, MINI_SEQ_CST);
-    MINI_ATOMIC_STORE(&g_i2s_bottom_half_work.executing, false, MINI_SEQ_CST);
-    MINI_ATOMIC_STORE(&g_i2s_bottom_half_work.rerun,     false, MINI_SEQ_CST);
+    i2s_bottom_half_work.fn  = hal_i2s_dma_bottom_half_handler;
+    i2s_bottom_half_work.arg = pdev;
+    MINI_ATOMIC_STORE(&i2s_bottom_half_work.pending,   false, MINI_SEQ_CST);
+    MINI_ATOMIC_STORE(&i2s_bottom_half_work.executing, false, MINI_SEQ_CST);
+    MINI_ATOMIC_STORE(&i2s_bottom_half_work.rerun,     false, MINI_SEQ_CST);
 }
 
 
@@ -822,7 +822,7 @@ int hal_virtual_i2s_irq_callback(void* arg, uint16_t irq_num)
     if (pdev->ctlr->irq_mode == HAL_I2S_IRQ_NONE)
         return MINI_IRQ_ENTRY_NOBOTTOM;
 
-    /** 需要下半部: bus open 经 g_i2s_bottom_half_work 注册; HT/TC 清零在 IRQHandler */
+    /** 需要下半部: bus open 经 i2s_bottom_half_work 注册; HT/TC 清零在 IRQHandler */
     return MINI_IRQ_ENTRY_BOTTOM;
 }
 

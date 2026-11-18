@@ -3,7 +3,7 @@
  *@file main_common.h
  *@brief boot(app image_2) 与 app(image_1) 两个入口共用的系统级接口
  *@author H-000-H
- *@details 时钟与错误处理在两个固件里逐字相同, 抽到 main_common.cpp 各编一份。
+ *@details 时钟与错误处理在两个固件里逐字相同, 抽到 main_common.cc 各编一份。
  */
 #ifndef MAIN_COMMON_H
 #define MAIN_COMMON_H

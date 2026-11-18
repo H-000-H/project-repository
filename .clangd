@@ -14,7 +14,7 @@ CompileFlags:
 ---
 # C++ 源文件：g++ 驱动模拟 + 显式补交叉工具链 C++ 标准库头（cstdint 等）
 If:
-  PathMatch: .*\.cpp$
+  PathMatch: .*\.cc$
 CompileFlags:
   Compiler: arm-none-eabi-g++
   Add:
@@ -36,9 +36,9 @@ CompileFlags:
   Add:
     - -D__WCHAR_MIN__=0U
 ---
-# C++ 头文件（.hpp，如 app/led/led.hpp、system_cpp）：同 .cpp 段
+# C++ 头文件（.hh，如 app/led/led.hh、system_cpp）：同 .cc 段
 If:
-  PathMatch: .*\.hpp$
+  PathMatch: .*\.hh$
 CompileFlags:
   Compiler: arm-none-eabi-g++
   Add:

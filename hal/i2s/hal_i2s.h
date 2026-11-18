@@ -153,7 +153,7 @@ struct hal_i2s_dev
  * @note  fn/arg 由 hal_i2s 在 circular/async 使能 IT 时绑定;
  *        bus open 经 interrupt_virtual_register 挂到 VIRQ 表 (对齐 ADC)
  */
-extern struct bottom_half_work g_i2s_bottom_half_work;
+extern struct bottom_half_work i2s_bottom_half_work;
 
 
 int hal_i2s_bus_host_init(struct hal_i2s_bus_host* host, int hw_idx, const struct hal_i2s_bus_config* cfg) MINI_WARN_UNUSED_RESULT;

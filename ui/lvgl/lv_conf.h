@@ -1605,7 +1605,7 @@
 
 #if LV_USE_LOVYAN_GFX
 /** Header for LovyanGFX user configuration */
-#define LV_LGFX_USER_INCLUDE "lv_lgfx_user.hpp"
+#define LV_LGFX_USER_INCLUDE "lv_lgfx_user.hh"
 
 #endif /*LV_USE_LOVYAN_GFX*/
 
